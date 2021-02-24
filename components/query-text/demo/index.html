@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+		/>
+		<meta name="Description" content="Put your description here." />
+	</head>
+	<style>
+		body {
+			display: grid;
+			grid-template-columns: repeat(12, 1fr);
+			grid-gap: 20px;
+		}
+	</style>
+	<body>
+		<query-text
+			rootApiEndpoint="https://my.api.mockaroo.com/"
+			placeholderText="Cerca i contenuti"
+		>
+		</query-text>
+		<script>
+			const myElement = document.querySelector('query-text');
+			myElement.addEventListener('search-query-event', e => {
+				console.log(e);
+				console.log(e.detail.searchedQuery);
+			});
+		</script>
+		<script type="module" src="../query-text.js"></script>
+	</body>
+</html>
