@@ -17,6 +17,7 @@ export class QueryText extends LitElement {
 			prefixToMatchinRegexMapping: { type: Object },
 			mintextInputLenght: { type: Number },
 			autocompleteResults: { type: Array },
+			showSearchSuggestions: { type: Boolean },
 		};
 	}
 
@@ -72,12 +73,20 @@ export class QueryText extends LitElement {
 			shouldSort: true,
 			includeMatches: true,
 		};
+		this.showSearchSuggestions = false;
+		this.searchInput = '';
 	}
+
+	/* LIFECYCLE METHODS */
 
 	connectedCallback() {
 		super.connectedCallback();
 		console.debug('DEBUG: QueryText successfuly added to the DOM');
 		this.updateDictionariesInfo();
+	}
+
+	firstUpdated() {
+		this.searchInput = this.shadowRoot.querySelector('.search-bar');
 	}
 
 	updated(changedProperties) {
@@ -133,6 +142,8 @@ export class QueryText extends LitElement {
 		return regex;
 	}
 
+	/* EVENT HANDLERS */
+
 	_handleTextInputEvent(ev) {
 		const textInput = this.trimString(ev.target.value);
 		this.textInput = textInput;
@@ -148,9 +159,20 @@ export class QueryText extends LitElement {
 				});
 				this.dispatchEvent(event);
 			} else if (this.isQueryStringEligibleForAutocompletion(textInput)) {
+				this.showSearchSuggestions = true;
 				this.autocompleteResults = this.queryConstructor();
+			} else {
+				this.showSearchSuggestions = false;
 			}
 		}
+	}
+
+	_handleAutocompleteList(ev) {
+		console.debug('_handleAutocompleteList', ev);
+		if (ev.target.tagName === 'LI') {
+			this.searchInput.value = ev.target.textContent.trim();
+		}
+		this.showSearchSuggestions = false;
 	}
 
 	trimString = textInput => textInput.trim();
@@ -174,16 +196,47 @@ export class QueryText extends LitElement {
 
 	queryConstructor() {
 		console.log('queryConstructor textInput', this.textInput);
-		let matchedPrefixes = this.buildQueryFromMatchingRegex();
-		console.log('queryConstructor', matchedPrefixes);
-		let normalizedQuery = this.normalizeQueryByRemovingPrefixes(
-			matchedPrefixes
-		);
-		console.log('queryConstructor', normalizedQuery);
 
-		let results = this.findResourcesByMatchingSubString(normalizedQuery);
+		let matchedPrefixes = this.buildQueryFromMatchingRegex();
+		if (matchedPrefixes.length === 0) return;
+		console.log('matchedPrefixes', matchedPrefixes);
+		// To be discussed, here we choose to consider only the last prefix for autocompletion
+		// If only 1 prefix exist then it is the last
+
+		let lastInsertedWordWithPrefix =
+			matchedPrefixes[matchedPrefixes.length - 1];
+		console.log('lastInsertedWordWithPrefix', lastInsertedWordWithPrefix);
+
+		/* let normalizedQuery = this.normalizeQueryByRemovingPrefixes(
+			lastInsertedWordWithPrefix
+		); */
+		let {
+			activePrefix,
+			cleanTextFromPrefix,
+		} = this.normalizeQueryByRemovingPrefixes(lastInsertedWordWithPrefix);
+		console.warn('heee', activePrefix);
+		let results = this.findResourcesByMatchingSubString(
+			activePrefix,
+			cleanTextFromPrefix
+		);
 		console.log('findResourcesByMatchingSubString', results);
 		return results;
+	}
+
+	normalizeQueryByRemovingPrefixes(matchedPrefixes) {
+		console.warn('matchedPrefixes', matchedPrefixes);
+
+		let activePrefix = matchedPrefixes.prefix;
+		// this does not work as expected last match does not respect the order of inserted text
+		console.warn('activePrefix', activePrefix);
+		let lastMatch = matchedPrefixes.match[matchedPrefixes.match.length - 1];
+
+		console.warn('lastMatch', lastMatch);
+
+		let cleanTextFromPrefix = lastMatch.replace(activePrefix, '');
+
+		console.warn('cleanTextFromPrefix', cleanTextFromPrefix);
+		return { activePrefix, cleanTextFromPrefix };
 	}
 
 	buildQueryFromMatchingRegex() {
@@ -192,7 +245,6 @@ export class QueryText extends LitElement {
 
 		Object.keys(prefixWithRegex).forEach(prefix => {
 			let match = this.textInput.match(prefixWithRegex[prefix].regex);
-
 			if (match) {
 				stringMatches.push({
 					prefix: prefix,
@@ -203,7 +255,7 @@ export class QueryText extends LitElement {
 		return stringMatches;
 	}
 
-	normalizeQueryByRemovingPrefixes(matchedPrefixes) {
+	/* normalizeQueryByRemovingPrefixes(matchedPrefixes) {
 		let normalizedTextInput = '';
 
 		matchedPrefixes.forEach(query => {
@@ -220,11 +272,12 @@ export class QueryText extends LitElement {
 		});
 
 		return normalizedTextInput;
-	}
+	} */
 
-	findResourcesByMatchingSubString(textInput) {
+	findResourcesByMatchingSubString(prefix, textInput) {
 		console.debug('DEBUG: findResourcesByMatchingSubString', textInput);
-		const fuse = new Fuse(this.dictionaries['@'], this.fuzzySearchOpts);
+		console.debug('DEBUG: findResourcesByMatchingSubString', prefix);
+		const fuse = new Fuse(this.dictionaries[prefix], this.fuzzySearchOpts);
 		return fuse.search(textInput);
 	}
 
@@ -232,11 +285,13 @@ export class QueryText extends LitElement {
 	// var matches = yourString.match(/\btotal\b/g);
 	// var lastMatch = matches[matches.length-1];
 
+	/* HTML/lit-html TEMPLATES */
+
 	composeSearchResultsTemplate = () => {
 		if (this.autocompleteResults) {
 			console.log('searchResults appeared', this.autocompleteResults);
 			const generatedTemplate = this.autocompleteResults.map(result => {
-				return html` <li>
+				return html` <li tabindex="0">
 					<span class="name"> ${result.item} </span>
 				</li>`;
 			});
@@ -253,11 +308,13 @@ export class QueryText extends LitElement {
 					type="text"
 					placeholder="${this.placeholderText}"
 				/>
-				<slot></slot>
 				<!-- put search button here -->
+				<slot></slot>
 			</div>
-			<ul class="search-results">
-				${this.composeSearchResultsTemplate()}
+			<ul class="search-results" @click=${this._handleAutocompleteList}>
+				${this.showSearchSuggestions
+					? html` ${this.composeSearchResultsTemplate()} `
+					: ''}
 			</ul>
 		`;
 	}
