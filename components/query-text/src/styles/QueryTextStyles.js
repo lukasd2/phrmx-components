@@ -34,6 +34,9 @@ export const queryTextStyles = css`
                 background: #34b399;
                 cursor: pointer;
             }
+            .search-results li:focus {
+                background: #34b399;
+            }
             .search-box {
                 display: flex;
             }
