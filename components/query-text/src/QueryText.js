@@ -1,6 +1,8 @@
 import { html, LitElement } from 'lit-element';
 import { queryTextStyles } from './styles/QueryTextStyles.js';
 
+import Fuse from 'fuse.js';
+
 export class QueryText extends LitElement {
 	static get styles() {
 		return [queryTextStyles];
@@ -10,10 +12,11 @@ export class QueryText extends LitElement {
 		return {
 			rootApiEndpoint: { type: String },
 			placeholderText: { type: String },
+			textInput: { type: String },
 			dictionaries: { type: Object },
-			extractedPrefixesFromDicts: { type: Array },
 			prefixToMatchinRegexMapping: { type: Object },
 			mintextInputLenght: { type: Number },
+			autocompleteResults: { type: Array },
 		};
 	}
 
@@ -21,6 +24,7 @@ export class QueryText extends LitElement {
 		super();
 		this.rootApiEndpoint = '';
 		this.placeholderText = 'Cerca per esplorare i contenuti disponibili';
+		this.textInput = '';
 		this.mintextInputLenght = 2;
 		this.dictionaries = {
 			'@': [
@@ -60,8 +64,14 @@ export class QueryText extends LitElement {
 				'Brazil',
 			],
 		};
-		this.extractedPrefixesFromDicts = [];
-		this.prefixToMatchinRegexMapping = {};
+		this.prefixesToRegexMapping = {};
+		this.autocompleteResults = [];
+		this.fuzzySearchOpts = {
+			includeScore: true,
+			threshold: 0.4,
+			shouldSort: true,
+			includeMatches: true,
+		};
 	}
 
 	connectedCallback() {
@@ -78,17 +88,16 @@ export class QueryText extends LitElement {
 	}
 
 	updateDictionariesInfo() {
-		// pipe or reduce would be ideal for cleaner code. The choice is to not add helper functions for now...
+		// pipe or function reducer would be ideal for cleaner code. The choice is to not add helper functions for now
+		// altrimenti anche un try catch
 		const extractedPrefixes = this.extractPrefixesFromDictionaries();
-		this.extractedPrefixesFromDicts = [
-			...this.extractedPrefixesFromDicts,
-			...extractedPrefixes,
-		];
 
-		const extractedPrefixesToRegexes = this.createMatchingRegexFromPrefixes();
-		this.prefixToMatchinRegexMapping = {
-			...this.extractedPrefixesFromDicts,
-			...extractedPrefixes,
+		const prefixesToRegexMapping = this.createMatchingRegexFromPrefixes(
+			extractedPrefixes
+		);
+		this.prefixToMatchingRegexMapping = {
+			...this.prefixToMatchingRegexMapping,
+			...prefixesToRegexMapping,
 		};
 	}
 
@@ -103,10 +112,10 @@ export class QueryText extends LitElement {
 		return extractedPrefixesFromDicts;
 	}
 
-	createMatchingRegexFromPrefixes() {
+	createMatchingRegexFromPrefixes(extractedPrefixes) {
 		let prefixToMatchingRegex = {};
 
-		this.extractedPrefixesFromDicts.map(prefix => {
+		extractedPrefixes.map(prefix => {
 			const regex = this.createRegexFromPrefix(prefix);
 			prefixToMatchingRegex[prefix] = {
 				regex: regex,
@@ -126,7 +135,7 @@ export class QueryText extends LitElement {
 
 	_handleTextInputEvent(ev) {
 		const textInput = this.trimString(ev.target.value);
-
+		this.textInput = textInput;
 		if (this.isTextInputLenghtGreaterThanThreshold(textInput)) {
 			const pressedKey = ev.code || ev.key;
 			if (pressedKey === 'Enter' || pressedKey === 13) {
@@ -139,11 +148,7 @@ export class QueryText extends LitElement {
 				});
 				this.dispatchEvent(event);
 			} else if (this.isQueryStringEligibleForAutocompletion(textInput)) {
-				let activePrefix = this.doesTextInputContainDefinedPrefixes(
-					textInput
-				);
-				console.log('hey', activePrefix);
-				//this.searchResults = this.queryConstructor();
+				this.autocompleteResults = this.queryConstructor();
 			}
 		}
 	}
@@ -154,22 +159,90 @@ export class QueryText extends LitElement {
 		textInput.length > this.mintextInputLenght;
 
 	isQueryStringEligibleForAutocompletion(textInput) {
-		let isDefinedPrefix = false;
-		if (this.doesTextInputContainDefinedPrefixes(textInput) !== false)
-			isDefinedPrefix = true;
-		return Object.keys(this.dictionaries).length > 0 && isDefinedPrefix;
+		return (
+			Object.keys(this.dictionaries).length > 0 &&
+			this.doesTextInputContainDefinedPrefixes(textInput)
+		);
 	}
 
 	doesTextInputContainDefinedPrefixes(textInput) {
 		for (let key of Object.keys(this.dictionaries)) {
-			if (textInput.includes(key)) return key;
+			if (textInput.includes(key)) return true;
 		}
 		return false;
+	}
+
+	queryConstructor() {
+		console.log('queryConstructor textInput', this.textInput);
+		let matchedPrefixes = this.buildQueryFromMatchingRegex();
+		console.log('queryConstructor', matchedPrefixes);
+		let normalizedQuery = this.normalizeQueryByRemovingPrefixes(
+			matchedPrefixes
+		);
+		console.log('queryConstructor', normalizedQuery);
+
+		let results = this.findResourcesByMatchingSubString(normalizedQuery);
+		console.log('findResourcesByMatchingSubString', results);
+		return results;
+	}
+
+	buildQueryFromMatchingRegex() {
+		const prefixWithRegex = this.prefixToMatchingRegexMapping;
+		let stringMatches = [];
+
+		Object.keys(prefixWithRegex).forEach(prefix => {
+			let match = this.textInput.match(prefixWithRegex[prefix].regex);
+
+			if (match) {
+				stringMatches.push({
+					prefix: prefix,
+					match: match,
+				});
+			}
+		});
+		return stringMatches;
+	}
+
+	normalizeQueryByRemovingPrefixes(matchedPrefixes) {
+		let normalizedTextInput = '';
+
+		matchedPrefixes.forEach(query => {
+			let activePrefix = query.prefix;
+
+			query.match.map(query => {
+				let cleanTextFromPrefix = query.replace(activePrefix, '');
+
+				normalizedTextInput = normalizedTextInput.concat(
+					cleanTextFromPrefix,
+					' '
+				);
+			});
+		});
+
+		return normalizedTextInput;
+	}
+
+	findResourcesByMatchingSubString(textInput) {
+		console.debug('DEBUG: findResourcesByMatchingSubString', textInput);
+		const fuse = new Fuse(this.dictionaries['@'], this.fuzzySearchOpts);
+		return fuse.search(textInput);
 	}
 
 	// TODO: example regex: @\S{2,}.\w*\b
 	// var matches = yourString.match(/\btotal\b/g);
 	// var lastMatch = matches[matches.length-1];
+
+	composeSearchResultsTemplate = () => {
+		if (this.autocompleteResults) {
+			console.log('searchResults appeared', this.autocompleteResults);
+			const generatedTemplate = this.autocompleteResults.map(result => {
+				return html` <li>
+					<span class="name"> ${result.item} </span>
+				</li>`;
+			});
+			return html`${generatedTemplate}`;
+		}
+	};
 
 	render() {
 		return html`
@@ -180,8 +253,12 @@ export class QueryText extends LitElement {
 					type="text"
 					placeholder="${this.placeholderText}"
 				/>
+				<slot></slot>
+				<!-- put search button here -->
 			</div>
-			<ul class="search-results"></ul>
+			<ul class="search-results">
+				${this.composeSearchResultsTemplate()}
+			</ul>
 		`;
 	}
 }
