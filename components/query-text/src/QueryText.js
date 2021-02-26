@@ -158,13 +158,44 @@ export class QueryText extends LitElement {
 					composed: true,
 				});
 				this.dispatchEvent(event);
-			} else if (this.isQueryStringEligibleForAutocompletion(textInput)) {
+			} else if (this.isQueryStringEligibleForAutocompletion()) {
 				this.showSearchSuggestions = true;
 				this.autocompleteResults = this.queryConstructor();
 			} else {
 				this.showSearchSuggestions = false;
 			}
 		}
+	}
+
+	extractLastPrefixToBeAutocompleted() {
+		const textInput = this.textInput;
+		let indicesOfLastPrefixes = {};
+		// initialized to be lower than -1 because of: String.indexOf() --> -1
+		let highestPrefixIndex = -2;
+		let activePrefix = '';
+
+		for (let prefix of Object.keys(this.dictionaries)) {
+			indicesOfLastPrefixes[prefix] = textInput.lastIndexOf(prefix);
+			if (highestPrefixIndex < indicesOfLastPrefixes[prefix]) {
+				highestPrefixIndex = indicesOfLastPrefixes[prefix];
+				activePrefix = prefix;
+			}
+		}
+
+		let match = this.doesRegexMatch(activePrefix, textInput);
+		console.log('match', match);
+		return { activePrefix, match };
+	}
+
+	doesRegexMatch(key, textInput) {
+		let match = textInput.match(
+			this.prefixToMatchingRegexMapping[key].regex
+		);
+		if (match === null) return;
+		//let lastmatch = match.pop(match);
+		const lastMatch = match[match.length - 1];
+		//console.log('final matches order', matches);
+		return lastMatch;
 	}
 
 	_handleAutocompleteList(ev) {
@@ -180,10 +211,10 @@ export class QueryText extends LitElement {
 	isTextInputLenghtGreaterThanThreshold = textInput =>
 		textInput.length > this.mintextInputLenght;
 
-	isQueryStringEligibleForAutocompletion(textInput) {
+	isQueryStringEligibleForAutocompletion() {
 		return (
 			Object.keys(this.dictionaries).length > 0 &&
-			this.doesTextInputContainDefinedPrefixes(textInput)
+			this.doesTextInputContainDefinedPrefixes(this.textInput)
 		);
 	}
 
@@ -195,25 +226,26 @@ export class QueryText extends LitElement {
 	}
 
 	queryConstructor() {
-		console.log('queryConstructor textInput', this.textInput);
+		let { activePrefix, match } = this.extractLastPrefixToBeAutocompleted();
 
-		let matchedPrefixes = this.buildQueryFromMatchingRegex();
+		if (match === null || match === undefined) return;
+		/* let matchedPrefixes = this.buildQueryFromMatchingRegex();
 		if (matchedPrefixes.length === 0) return;
-		console.log('matchedPrefixes', matchedPrefixes);
+		console.log('matchedPrefixes', matchedPrefixes); */
 		// To be discussed, here we choose to consider only the last prefix for autocompletion
 		// If only 1 prefix exist then it is the last
 
-		let lastInsertedWordWithPrefix =
+		/* let lastInsertedWordWithPrefix =
 			matchedPrefixes[matchedPrefixes.length - 1];
-		console.log('lastInsertedWordWithPrefix', lastInsertedWordWithPrefix);
+		console.log('lastInsertedWordWithPrefix', lastInsertedWordWithPrefix); */
 
 		/* let normalizedQuery = this.normalizeQueryByRemovingPrefixes(
 			lastInsertedWordWithPrefix
 		); */
-		let {
+		let cleanTextFromPrefix = this.normalizeQueryByRemovingPrefixes(
 			activePrefix,
-			cleanTextFromPrefix,
-		} = this.normalizeQueryByRemovingPrefixes(lastInsertedWordWithPrefix);
+			match
+		);
 		console.warn('heee', activePrefix);
 		let results = this.findResourcesByMatchingSubString(
 			activePrefix,
@@ -223,20 +255,20 @@ export class QueryText extends LitElement {
 		return results;
 	}
 
-	normalizeQueryByRemovingPrefixes(matchedPrefixes) {
+	normalizeQueryByRemovingPrefixes(activePrefix, matchedPrefixes) {
 		console.warn('matchedPrefixes', matchedPrefixes);
 
-		let activePrefix = matchedPrefixes.prefix;
+		/* let activePrefix = matchedPrefixes.prefix; */
 		// this does not work as expected last match does not respect the order of inserted text
-		console.warn('activePrefix', activePrefix);
-		let lastMatch = matchedPrefixes.match[matchedPrefixes.match.length - 1];
+		/* console.warn('activePrefix', activePrefix);
+		let lastMatch = matchedPrefixes.match[matchedPrefixes.match.length - 1]; */
 
-		console.warn('lastMatch', lastMatch);
+		/* console.warn('lastMatch', lastMatch); */
 
-		let cleanTextFromPrefix = lastMatch.replace(activePrefix, '');
+		let cleanTextFromPrefix = matchedPrefixes.replace(activePrefix, '');
 
 		console.warn('cleanTextFromPrefix', cleanTextFromPrefix);
-		return { activePrefix, cleanTextFromPrefix };
+		return cleanTextFromPrefix;
 	}
 
 	buildQueryFromMatchingRegex() {
