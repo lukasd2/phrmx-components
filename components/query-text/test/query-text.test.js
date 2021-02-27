@@ -3,31 +3,32 @@ import { html, fixture, expect } from '@open-wc/testing';
 import '../query-text.js';
 
 describe('QueryText', () => {
-  it('has a default title "Hey there" and counter 5', async () => {
-    const el = await fixture(html`<query-text></query-text>`);
+	it('has a default placeholderText "Cerca per esplorare i contenuti disponibili', async () => {
+		const el = await fixture(html`<query-text></query-text>`);
 
-    expect(el.title).to.equal('Hey there');
-    expect(el.counter).to.equal(5);
-  });
+		expect(el.placeholderText).to.equal(
+			'Cerca per esplorare i contenuti disponibili'
+		);
+	});
+	/* 
+	it('increases the counter on button click', async () => {
+		const el = await fixture(html`<query-text></query-text>`);
+		el.shadowRoot.querySelector('button').click();
 
-  it('increases the counter on button click', async () => {
-    const el = await fixture(html`<query-text></query-text>`);
-    el.shadowRoot.querySelector('button').click();
+		expect(el.counter).to.equal(6);
+	});
 
-    expect(el.counter).to.equal(6);
-  });
+	it('can override the title via attribute', async () => {
+		const el = await fixture(
+			html`<query-text title="attribute title"></query-text>`
+		);
 
-  it('can override the title via attribute', async () => {
-    const el = await fixture(
-      html`<query-text title="attribute title"></query-text>`
-    );
+		expect(el.title).to.equal('attribute title');
+	}); */
 
-    expect(el.title).to.equal('attribute title');
-  });
+	it('passes the a11y audit', async () => {
+		const el = await fixture(html`<query-text></query-text>`);
 
-  it('passes the a11y audit', async () => {
-    const el = await fixture(html`<query-text></query-text>`);
-
-    await expect(el).shadowDom.to.be.accessible();
-  });
+		await expect(el).shadowDom.to.be.accessible();
+	});
 });

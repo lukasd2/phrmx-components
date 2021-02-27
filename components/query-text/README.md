@@ -94,12 +94,33 @@ npm start
 
 To run a local development server that serves the basic demo located in `demo/index.html`
 
-## Implementation details
+## Implementation
 
--   User inputs more than one prefix
+-   Takes a dictionary in input {pref, dict}:
 
-    -   @`person` title:`title`
+```javascript
+{
+	'prefix1': [
+		'string1',
+	    ...
+        'string(n)',
+	],
+	'prefix(n)': [
+        'string1',
+	    ...
+        'string(n)',
+    ],
+    ...
+```
 
-        user types: @`person` --> autocomplete from dictionary `@`
-        then, user types another prefix: title:`title` --> autocomplete from dictionary `title:`
-        need to check live typed prefix
+-   Returns an event with the searched query to the API
+
+```javascript
+let event = new CustomEvent('search-query-event', {
+	detail: {
+		searchedQuery: textInput,
+	},
+	bubbles: true,
+	composed: true,
+});
+```

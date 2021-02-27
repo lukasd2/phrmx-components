@@ -1,7 +1,8 @@
 import { html, LitElement } from 'lit-element';
-import { queryTextStyles } from './styles/QueryTextStyles.js';
 
 import Fuse from 'fuse.js';
+
+import { queryTextStyles } from './styles/QueryTextStyles.js';
 
 export class QueryText extends LitElement {
 	static get styles() {
@@ -18,6 +19,7 @@ export class QueryText extends LitElement {
 			mintextInputLenght: { type: Number },
 			autocompleteResults: { type: Array },
 			showSearchSuggestions: { type: Boolean },
+			currentMatch: { type: String },
 		};
 	}
 
@@ -75,6 +77,7 @@ export class QueryText extends LitElement {
 		};
 		this.showSearchSuggestions = false;
 		this.searchInput = '';
+		this.currentMatch = '';
 	}
 
 	/* LIFECYCLE METHODS */
@@ -98,7 +101,7 @@ export class QueryText extends LitElement {
 
 	updateDictionariesInfo() {
 		// pipe or function reducer would be ideal for cleaner code. The choice is to not add helper functions for now
-		// altrimenti anche un try catch
+		// TODO: Possibile improvement at next iteration, add loadash utility library
 		const extractedPrefixes = this.extractPrefixesFromDictionaries();
 
 		const prefixesToRegexMapping = this.createMatchingRegexFromPrefixes(
@@ -114,21 +117,22 @@ export class QueryText extends LitElement {
 		if (Object.keys(this.dictionaries).length === 0)
 			return this.dictionaries;
 
-		let extractedPrefixesFromDicts = [];
-		for (let prefix of Object.keys(this.dictionaries)) {
+		const extractedPrefixesFromDicts = [];
+		for (const prefix of Object.keys(this.dictionaries)) {
 			extractedPrefixesFromDicts.push(prefix);
 		}
 		return extractedPrefixesFromDicts;
 	}
 
 	createMatchingRegexFromPrefixes(extractedPrefixes) {
-		let prefixToMatchingRegex = {};
+		const prefixToMatchingRegex = {};
 
 		extractedPrefixes.map(prefix => {
 			const regex = this.createRegexFromPrefix(prefix);
 			prefixToMatchingRegex[prefix] = {
 				regex: regex,
 			};
+			return prefixToMatchingRegex;
 		});
 		return prefixToMatchingRegex;
 	}
@@ -136,8 +140,8 @@ export class QueryText extends LitElement {
 	createRegexFromPrefix(prefix) {
 		const minCharsAfterPrefix = this.mintextInputLenght;
 		// Regex that matches any defined prefix with the word (longer than threshold) that it follows until a white space occurs
-		// It is complicated to create a regex which matches only textInput without the prefix. Example issue: example@example
-		const regex = new RegExp(`${prefix}\\S{${minCharsAfterPrefix},}`, 'gi'); //example: "@\S{2,}" --> @==prefix && 2==this.mintextInputLenght
+		//example: "@\S{2,}" --> @==prefix && 2==this.mintextInputLenght
+		const regex = new RegExp(`${prefix}\\S{${minCharsAfterPrefix},}`, 'gi');
 
 		return regex;
 	}
@@ -151,7 +155,7 @@ export class QueryText extends LitElement {
 		if (this.isTextInputLenghtGreaterThanThreshold(textInput)) {
 			const pressedKey = ev.code || ev.key;
 			if (pressedKey === 'Enter' || pressedKey === 13) {
-				let event = new CustomEvent('search-query-event', {
+				const event = new CustomEvent('search-query-event', {
 					detail: {
 						searchedQuery: textInput,
 					},
@@ -171,7 +175,10 @@ export class QueryText extends LitElement {
 	_handleAutocompleteList(ev) {
 		console.debug('_handleAutocompleteList', ev);
 		if (ev.target.tagName === 'LI') {
-			this.searchInput.value = ev.target.textContent.trim();
+			this.searchInput.value = this.searchInput.value.replaceAll(
+				this.currentMatch,
+				ev.target.textContent.trim()
+			);
 		}
 		this.showSearchSuggestions = false;
 	}
@@ -189,42 +196,50 @@ export class QueryText extends LitElement {
 	}
 
 	doesTextInputContainDefinedPrefixes(textInput) {
-		for (let key of Object.keys(this.dictionaries)) {
+		for (const key of Object.keys(this.dictionaries)) {
 			if (textInput.includes(key)) return true;
 		}
 		return false;
 	}
 
 	queryConstructor() {
-		let activePrefix = this.extractLastPrefixToBeAutocompleted();
+		const activePrefix = this.extractLastPrefixToBeAutocompleted();
 
-		if (activePrefix === '' || activePrefix === null) return;
+		if (activePrefix === '' || activePrefix === null) return null;
 
-		let prefixedString = this.prefixMatchedWithRegex(activePrefix);
+		const prefixedString = this.prefixMatchedWithRegex(activePrefix);
 
-		if (prefixedString === null || prefixedString === undefined) return;
+		if (prefixedString === null || prefixedString === undefined)
+			return null;
 
-		let cleanTextWithoutPrefix = this.normalizeQueryByRemovingPrefixes(
+		this.currentMatch = prefixedString;
+
+		const cleanTextWithoutPrefix = this.normalizeQueryByRemovingPrefixes(
 			activePrefix,
 			prefixedString
 		);
 
-		let results = this.findResourcesByMatchingSubString(
+		const results = this.findResourcesByMatchingSubString(
 			activePrefix,
 			cleanTextWithoutPrefix
 		);
 		console.log('findResourcesByMatchingSubString', results);
+
 		return results;
 	}
 
 	extractLastPrefixToBeAutocompleted() {
 		const textInput = this.textInput;
-		let indicesOfLastPrefixes = {};
+		const indicesOfLastPrefixes = {};
+		this.currentAutocompletedWordIndexes = {
+			start: 0,
+			end: 0,
+		};
 		// initialized to be lower than -1 because of: String.indexOf() --> -1
 		let highestPrefixIndex = -2;
 		let lastPrefix = '';
 
-		for (let prefix of Object.keys(this.dictionaries)) {
+		for (const prefix of Object.keys(this.dictionaries)) {
 			indicesOfLastPrefixes[prefix] = textInput.lastIndexOf(prefix);
 
 			if (highestPrefixIndex < indicesOfLastPrefixes[prefix]) {
@@ -233,6 +248,7 @@ export class QueryText extends LitElement {
 			}
 		}
 
+		// Check if the last prefixed world is long enough to provide autocomplete
 		if (
 			!this.isTextInputLenghtGreaterThanThreshold(
 				this.textInput.slice(
@@ -241,28 +257,33 @@ export class QueryText extends LitElement {
 			)
 		)
 			return null;
+
 		return lastPrefix;
 	}
 
 	prefixMatchedWithRegex(prefix) {
-		let match = this.textInput.match(
+		const match = this.textInput.match(
 			this.prefixToMatchingRegexMapping[prefix].regex
 		);
 		if (match === null || match === undefined) return null;
 
 		const lastMatch = match[match.length - 1];
+
 		return lastMatch;
 	}
 
 	normalizeQueryByRemovingPrefixes(activePrefix, matchedPrefixes) {
-		let cleanTextWithoutPrefix = matchedPrefixes.replace(activePrefix, '');
+		const cleanTextWithoutPrefix = matchedPrefixes.replace(
+			activePrefix,
+			''
+		);
 
 		return cleanTextWithoutPrefix;
 	}
 
 	buildQueryFromMatchingRegex() {
 		const prefixWithRegex = this.prefixToMatchingRegexMapping;
-		let stringMatches = [];
+		const stringMatches = [];
 
 		Object.keys(prefixWithRegex).forEach(prefix => {
 			let match = this.textInput.match(prefixWithRegex[prefix].regex);
@@ -289,9 +310,7 @@ export class QueryText extends LitElement {
 		if (this.autocompleteResults) {
 			console.log('searchResults appeared', this.autocompleteResults);
 			const generatedTemplate = this.autocompleteResults.map(result => {
-				return html` <li tabindex="0">
-					<span class="name"> ${result.item} </span>
-				</li>`;
+				return html` <li tabindex="0">${result.item}</li>`;
 			});
 			return html`${generatedTemplate}`;
 		}
