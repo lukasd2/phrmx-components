@@ -20,7 +20,7 @@ export const resultMediaStyles = css`
   }
 
   .thumbnail-element {
-    margin: 1.5em;
+    margin: 1em;
     box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1),
       0 0 0 1px rgba(10, 10, 10, 0.02);
   }
@@ -28,6 +28,12 @@ export const resultMediaStyles = css`
   .thumbnail-element .image-thumbnail {
     transition: all 0.3s;
     transform: scale(1);
+  }
+
+  .thumbnail-element:focus .image-thumbnail {
+    transform: scale(1.1);
+    border: solid 1px #00b4cc;
+    box-shadow: 0 0 5px 1px #00b4cc;
   }
 
   .thumbnail-element:hover .image-thumbnail {
@@ -41,5 +47,25 @@ export const resultMediaStyles = css`
     object-fit: cover;
     vertical-align: bottom;
     border-radius: 0.3rem;
+  }
+
+  [data-tooltip]::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    opacity: 0;
+    transition: all 0.15s ease;
+    padding: 10px;
+    color: #f4f4f4;
+    max-width: 100px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 1px silver;
+    z-index: 10;
+  }
+
+  [data-tooltip]:hover::before {
+    opacity: 1;
+    background: #00b4cc;
+    margin-top: -80px;
+    margin-left: 20px;
   }
 `;
