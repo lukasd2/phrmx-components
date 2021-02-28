@@ -1,5 +1,4 @@
 import { html, LitElement } from 'lit-element';
-
 import { resultMediaStyles } from './styles/resultMediaStyles.js';
 
 export class ResultMedia extends LitElement {
@@ -67,15 +66,32 @@ export class ResultMedia extends LitElement {
     ];
   }
 
+  // tested solution to be adopted.
+
+  /* _handleTooltipOnMouseover(ev) {
+    console.debug('_handleTooltipOnMouseover', ev);
+    if (ev.target.tagName === 'IMG') {
+      console.warn('Mouseover image element');
+      const tooltip = this.shadowRoot.querySelector('.tooltip');
+      tooltip.style.display = 'block';
+    } else {
+      console.log('you moved out');
+    }
+  } */
+
   render() {
     return html` <ul class="thumbnail-list">
       ${this.mediaData.map(
         media => html`
-          <li class="thumbnail-element">
+          <li
+            class="thumbnail-element"
+            data-tooltip="Titolo: ${media.mediaTitle}"
+            tabindex="0"
+          >
             <img
               class="image-thumbnail"
               src=${media.thumbnailUrl}
-              alt="Placeholder"
+              alt="${media.mediaTitle}"
             />
           </li>
         `
