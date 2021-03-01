@@ -1,4 +1,5 @@
 import { html, css, LitElement } from 'lit-element';
+// import child components here
 
 export class QueryUi extends LitElement {
 	static get styles() {
@@ -6,7 +7,6 @@ export class QueryUi extends LitElement {
 			:host {
 				display: block;
 				padding: 25px;
-				color: var(--query-ui-text-color, #000);
 			}
 		`;
 	}
@@ -16,15 +16,15 @@ export class QueryUi extends LitElement {
 			rootApiEndpoint: { type: String },
 			dictionariesRoute: { type: String },
 			searchResults: { type: Object },
+			dictionaries: { type: Object },
 		};
 	}
 
 	constructor() {
 		super();
 		this.rootApiEndpoint = 'https://my.api.mockaroo.com/';
-		this.dictionariesRoute = 'getdictionariesrequest.json?key=d8dae1b0';
-		this.dictionaries = {};
-		this.searchResults = {};
+		this.dictionariesRoute = 'dictionaries.json?key=d8dae1b0'; // not hiding keys for demo/testing purposes
+		this.searchRoute = 'answerset.json?key=d8dae1b0';
 	}
 
 	connectedCallback() {
@@ -71,7 +71,7 @@ export class QueryUi extends LitElement {
 		return jsonResponse;
 	}
 
-	async postDictionariesRequest(route, data) {
+	async postSearchRequest(route, data) {
 		const response = await fetch(`${this.rootApiEndpoint}${route}`, {
 			method: 'POST',
 			headers: {
@@ -96,17 +96,17 @@ export class QueryUi extends LitElement {
 	}
 
 	_handleSearchedQuery(ev) {
-		console.warn('_handleSearchedQuery', ev);
-		console.log(ev.detail.searchedQuery);
-		this.postDictionariesRequest(
-			this.dictionariesRoute,
-			ev.detail.searchedQuery
-		);
+		console.debug('_handleSearchedQuery', ev.detail.searchedQuery);
+		this.postSearchRequest(this.searchRoute, ev.detail.searchedQuery);
 	}
 
 	render() {
-		return html` ${this.dictionaries
-			? html` <h1>Dictionaries received!</h1>`
-			: ''}`;
+		return html` <query-text
+				.dictionaries=${this.dictionaries}
+				placeholderText="Ciao sono controllato da QueryUI"
+				maxAutocompleteSuggestions="10"
+			></query-text>
+
+			<result-media .answerSet=${this.searchResults}></result-media>`;
 	}
 }
