@@ -111,6 +111,7 @@ To run a local development server that serves the basic demo located in `demo/in
         'string(n)',
     ],
     ...
+}
 ```
 
 -   Returns an event with the searched query to the API

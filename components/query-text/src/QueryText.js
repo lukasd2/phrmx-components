@@ -11,12 +11,12 @@ export class QueryText extends LitElement {
 
 	static get properties() {
 		return {
-			rootApiEndpoint: { type: String },
 			placeholderText: { type: String },
 			textInput: { type: String },
 			dictionaries: { type: Object },
 			prefixToMatchinRegexMapping: { type: Object },
 			mintextInputLenght: { type: Number },
+			maxAutocompleteSuggestions: { type: Number },
 			autocompleteResults: { type: Array },
 			showSearchSuggestions: { type: Boolean },
 			currentMatch: { type: String },
@@ -25,48 +25,11 @@ export class QueryText extends LitElement {
 
 	constructor() {
 		super();
-		this.rootApiEndpoint = '';
 		this.placeholderText = 'Cerca per esplorare i contenuti disponibili';
 		this.textInput = '';
 		this.mintextInputLenght = 2;
-		this.dictionaries = {
-			'@': [
-				'Kylynn Normavill',
-				'Gwyneth Aikin',
-				'Katey Stegel',
-				'Blair Treher',
-				'Karly Simoni',
-				'Bernita Coiley',
-				'Earle Cunah',
-				'Harvey Emeny',
-				'Barret Mapp',
-				'Alberik Hickinbottom',
-			],
-			'title:': [
-				'Thorn in the Heart, The',
-				'Executioner, The',
-				'Black Balloon, The',
-				'Love Happy',
-				'Never Again',
-				'Science and Islam',
-				'Finding Forrester',
-				'No Looking Back',
-				'Warrior of the Lost World',
-				'Gross Anatomy (a.k.a. A Cut Above)',
-			],
-			'nationality:': [
-				'Russia',
-				'Indonesia',
-				'Philippines',
-				'Poland',
-				'Tanzania',
-				'Brazil',
-				'Namibia',
-				'Russia',
-				'China',
-				'Brazil',
-			],
-		};
+		this.maxAutocompleteSuggestions = 10;
+		this.dictionaries = {};
 		this.prefixesToRegexMapping = {};
 		this.autocompleteResults = [];
 		this.fuzzySearchOpts = {
@@ -100,6 +63,7 @@ export class QueryText extends LitElement {
 	}
 
 	updateDictionariesInfo() {
+		if (Object.keys(this.dictionaries).length === 0) return null;
 		// pipe or function reducer would be ideal for cleaner code. The choice is to not add helper functions for now
 		// TODO: Possibile improvement at next iteration, add loadash utility library
 		const extractedPrefixes = this.extractPrefixesFromDictionaries();
@@ -166,6 +130,10 @@ export class QueryText extends LitElement {
 			} else if (this.isQueryStringEligibleForAutocompletion()) {
 				this.showSearchSuggestions = true;
 				this.autocompleteResults = this.queryConstructor();
+				this.autocompleteResults = this.autocompleteResults.slice(
+					0,
+					this.maxAutocompleteSuggestions
+				);
 			} else {
 				this.showSearchSuggestions = false;
 			}
@@ -223,6 +191,7 @@ export class QueryText extends LitElement {
 			activePrefix,
 			cleanTextWithoutPrefix
 		);
+
 		console.log('findResourcesByMatchingSubString', results);
 
 		return results;
@@ -324,6 +293,7 @@ export class QueryText extends LitElement {
 					class="search-bar"
 					type="text"
 					placeholder="${this.placeholderText}"
+					maxlength="150"
 				/>
 				<!-- put search button here -->
 				<slot></slot>
