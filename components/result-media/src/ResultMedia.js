@@ -8,62 +8,13 @@ export class ResultMedia extends LitElement {
 
   static get properties() {
     return {
-      mediaData: { type: Array },
+      answerSet: { type: Array },
     };
   }
 
   constructor() {
     super();
-    this.mediaData = [
-      {
-        thumbnailUrl: 'https://picsum.photos/id/999/150/200',
-        mediaTitle: 'ExampleTitle1',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-      {
-        thumbnailUrl: 'https://picsum.photos/id/998/150/200',
-        mediaTitle: 'ExampleTitle2',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-      {
-        thumbnailUrl: 'https://picsum.photos/id/997/150/200',
-        mediaTitle: 'ExampleTitle3',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-      {
-        thumbnailUrl: 'https://picsum.photos/id/996/150/200',
-        mediaTitle: 'ExampleTitle4',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-      {
-        thumbnailUrl: 'https://picsum.photos/id/995/150/200',
-        mediaTitle: 'ExampleTitle4',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-      {
-        thumbnailUrl: 'https://picsum.photos/id/994/150/200',
-        mediaTitle: 'ExampleTitle4',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-      {
-        thumbnailUrl: 'https://picsum.photos/id/993/150/200',
-        mediaTitle: 'ExampleTitle4',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-      {
-        thumbnailUrl: 'https://picsum.photos/id/992/150/200',
-        mediaTitle: 'ExampleTitle4',
-        mediaDescription:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione veritatis odit neque consequatur. Corporis qui excepturi maiores voluptatum ratione aliquam.',
-      },
-    ];
+    this.answerSet = [];
   }
 
   // tested solution to be adopted.
@@ -81,17 +32,19 @@ export class ResultMedia extends LitElement {
 
   render() {
     return html` <ul class="thumbnail-list">
-      ${this.mediaData.map(
-        media => html`
+      ${this.answerSet.map(
+        answer => html`
           <li
             class="thumbnail-element"
-            data-tooltip="Titolo: ${media.mediaTitle}"
+            data-tooltip="Titolo: ${answer.film_name}"
+            data-start="${answer.start}"
+            data-end="${answer.start}"
             tabindex="0"
           >
             <img
               class="image-thumbnail"
-              src=${media.thumbnailUrl}
-              alt="${media.mediaTitle}"
+              src=${answer.thumbnail_url}
+              alt="${answer.film_name}"
             />
           </li>
         `
