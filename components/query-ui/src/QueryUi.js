@@ -1,4 +1,5 @@
 import { html, css, LitElement } from 'lit-element';
+import 'query-text';
 
 export class QueryUi extends LitElement {
 	static get styles() {
@@ -100,12 +101,12 @@ export class QueryUi extends LitElement {
 	}
 
 	render() {
-		return html` <query-text
-				.dictionaries=${this.dictionaries}
-				placeholderText="Ciao sono controllato da QueryUI"
-				maxAutocompleteSuggestions="10"
-			></query-text>
+			return html` <query-text
+					placeholderText="Ciao sono controllato da QueryUI"
+					maxAutocompleteSuggestions="10"
+				></query-text>
 
-			<result-media .answerSet=${this.searchResults}></result-media>`;
+				<result-media .answerSet=${this.searchResults}></result-media>`;
+		}
 	}
 }

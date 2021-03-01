@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit-element';
-import '../../query-text/query-text.js';
+import 'query-text';
 
 export class DemoApp extends LitElement {
   static get properties() {
@@ -45,6 +45,7 @@ export class DemoApp extends LitElement {
       <main>
         <h1>${this.title}</h1>
       </main>
+      <query-ui></query-ui>
       <query-text></query-text>
       <p class="app-footer">
         🚽 Made with love by

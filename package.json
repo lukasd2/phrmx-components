@@ -5,7 +5,7 @@
         "lerna": "^3.22.1"
     },
     "scripts": {
-        "start": "lerna run start --scope=query-ui",
+        "start": "lerna run start --scope=demo-app",
         "test": "lerna run test"
     }
 }
