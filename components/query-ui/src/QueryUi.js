@@ -1,5 +1,4 @@
 import { html, css, LitElement } from 'lit-element';
-// import child components here
 
 export class QueryUi extends LitElement {
 	static get styles() {

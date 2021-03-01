@@ -20,16 +20,17 @@
     "lit-html": "^1.3.0"
   },
   "devDependencies": {
-    "@web/dev-server": "^0.1.8",
-    "eslint": "^7.20.0",
     "@open-wc/eslint-config": "^4.2.0",
-    "prettier": "^2.2.1",
+    "@open-wc/testing": "^2.5.32",
+    "@web/dev-server": "^0.1.8",
+    "@web/dev-server-storybook": "^0.3.5",
+    "@web/test-runner": "^0.12.15",
+    "eslint": "^7.20.0",
     "eslint-config-prettier": "^7.2.0",
     "husky": "^4.3.8",
     "lint-staged": "^10.5.4",
-    "@web/test-runner": "^0.12.15",
-    "@open-wc/testing": "^2.5.32",
-    "@web/dev-server-storybook": "^0.3.5"
+    "prettier": "^2.2.1",
+    "query-text": "^0.0.0"
   },
   "eslintConfig": {
     "extends": [
