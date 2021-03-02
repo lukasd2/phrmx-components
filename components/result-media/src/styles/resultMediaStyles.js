@@ -13,32 +13,41 @@ export const resultMediaStyles = css`
     padding: 0;
     margin: 0;
     display: flex;
-    justify-content: space-between;
     min-height: 50vh;
     flex-wrap: wrap;
     margin: 0.25em;
   }
 
   .thumbnail-element {
-    margin: 1em;
+    margin: 0.5em 0.8em 0.5em 0.8em;
     box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1),
       0 0 0 1px rgba(10, 10, 10, 0.02);
+    width: 100px;
+    height: 120px;
+    overflow: hidden;
+    border-radius: 10px;
+    box-sizing: border-box;
+
   }
 
   .thumbnail-element .image-thumbnail {
-    transition: all 0.3s;
-    transform: scale(1);
+    transition: 0.5s all ease-in-out;
   }
 
   .thumbnail-element:focus .image-thumbnail {
-    transform: scale(1.1);
+    transform: scale(1.3);
+    border: solid 1px #00b4cc;
+    box-shadow: 0 0 5px 1px #00b4cc;
+  }
+
+  .thumbnail-element:hover {
     border: solid 1px #00b4cc;
     box-shadow: 0 0 5px 1px #00b4cc;
   }
 
   .thumbnail-element:hover .image-thumbnail {
     cursor: pointer;
-    transform: scale(1.1);
+    transform: scale(1.3);
   }
 
   .image-thumbnail {
@@ -46,7 +55,7 @@ export const resultMediaStyles = css`
     min-width: 100%;
     object-fit: cover;
     vertical-align: bottom;
-    border-radius: 0.3rem;
+    border-radius: 10px;
   }
 
   [data-tooltip]::before {
