@@ -1,12 +1,14 @@
 import { html, css, LitElement } from 'lit-element';
-import 'query-text';
+import '../../query-text/query-text.js';
+import '../../result-media/result-media.js';
 
 export class QueryUi extends LitElement {
 	static get styles() {
 		return css`
 			:host {
-				display: block;
-				padding: 25px;
+				display: grid;
+				grid-template-columns: repeat(12, 1fr);
+				grid-column: 6/13;
 			}
 		`;
 	}
@@ -15,7 +17,7 @@ export class QueryUi extends LitElement {
 		return {
 			rootApiEndpoint: { type: String },
 			dictionariesRoute: { type: String },
-			searchResults: { type: Object },
+			searchResults: { type: Array },
 			dictionaries: { type: Object },
 		};
 	}
@@ -91,7 +93,7 @@ export class QueryUi extends LitElement {
 			`DEBUG: Async data from ${this.rootApiEndpoint}${route} has arrived:`,
 			jsonResponse
 		);
-		this.searchResults = { ...this.searchResults, ...jsonResponse };
+		this.searchResults = jsonResponse;
 		return jsonResponse;
 	}
 
@@ -101,12 +103,12 @@ export class QueryUi extends LitElement {
 	}
 
 	render() {
-			return html` <query-text
-					placeholderText="Ciao sono controllato da QueryUI"
-					maxAutocompleteSuggestions="10"
-				></query-text>
-
-				<result-media .answerSet=${this.searchResults}></result-media>`;
-		}
+		return html`
+			<query-text
+				.dictionaries=${this.dictionaries}
+				placeholderText="Inserisci il testo da cercare..."
+			></query-text>
+			<result-media .answerSet=${this.searchResults}></result-media>
+		`;
 	}
 }

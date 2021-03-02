@@ -17,6 +17,24 @@ export class ResultMedia extends LitElement {
     this.answerSet = [];
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    console.debug('DEBUG: ResultMedia successfuly added to the DOM');
+    this.updateSearchResults();
+  }
+
+  updated(changedProperties) {
+    console.debug('changedProperty', changedProperties); // logs previous values
+    if (changedProperties.has('answerSet')) {
+      this.updateSearchResults();
+    }
+  }
+
+  updateSearchResults() {
+    if (!this.answerSet || this.answerSet.length === 0) return null;
+    console.log(this.answerSet);
+  }
+
   // tested solution to be adopted.
 
   /* _handleTooltipOnMouseover(ev) {
@@ -30,9 +48,10 @@ export class ResultMedia extends LitElement {
     }
   } */
 
-  render() {
-    return html` <ul class="thumbnail-list">
-      ${this.answerSet.map(
+  composeSearchResultsTemplate = () => {
+    if (this.answerSet) {
+      console.log('searchResults appeared', this.answerSet);
+      const generatedTemplate = this.answerSet.map(
         answer => html`
           <li
             class="thumbnail-element"
@@ -48,7 +67,14 @@ export class ResultMedia extends LitElement {
             />
           </li>
         `
-      )}
+      );
+      return html`${generatedTemplate}`;
+    }
+  };
+
+  render() {
+    return html` <ul class="thumbnail-list">
+      ${this.answerSet ? html` ${this.composeSearchResultsTemplate()} ` : ''}
     </ul>`;
   }
 }

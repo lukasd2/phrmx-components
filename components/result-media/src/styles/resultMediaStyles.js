@@ -2,7 +2,8 @@ import { css } from 'lit-element';
 
 export const resultMediaStyles = css`
   :host {
-    grid-column: 5/13;
+    display: grid;
+    grid-column: 3/11;
     border: 1px solid black;
     border-radius: 5px;
     padding: 25px;

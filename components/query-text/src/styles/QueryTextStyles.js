@@ -2,8 +2,9 @@ import { css } from 'lit-element';
 
 export const queryTextStyles = css`
             :host {
-                grid-column: 4/10;
-                margin: 100px 0;
+            grid-column: 3/11;
+            display: grid;
+            margin: 50px 0;
             }
             .search-bar {
                 width: 100%;

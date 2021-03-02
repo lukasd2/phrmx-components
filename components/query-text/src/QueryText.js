@@ -63,7 +63,8 @@ export class QueryText extends LitElement {
 	}
 
 	updateDictionariesInfo() {
-		if (Object.keys(this.dictionaries).length === 0) return null;
+		if (!this.dictionaries || Object.keys(this.dictionaries).length === 0)
+			return null;
 		// pipe or function reducer would be ideal for cleaner code. The choice is to not add helper functions for now
 		// TODO: Possibile improvement at next iteration, add loadash utility library
 		const extractedPrefixes = this.extractPrefixesFromDictionaries();
@@ -130,10 +131,15 @@ export class QueryText extends LitElement {
 			} else if (this.isQueryStringEligibleForAutocompletion()) {
 				this.showSearchSuggestions = true;
 				this.autocompleteResults = this.queryConstructor();
-				this.autocompleteResults = this.autocompleteResults.slice(
-					0,
+				if (
+					this.autocompleteResults.length >
 					this.maxAutocompleteSuggestions
-				);
+				) {
+					this.autocompleteResults = this.autocompleteResults.slice(
+						0,
+						this.maxAutocompleteSuggestions
+					);
+				}
 			} else {
 				this.showSearchSuggestions = false;
 			}
