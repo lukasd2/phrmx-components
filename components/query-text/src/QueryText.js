@@ -144,7 +144,6 @@ export class QueryText extends LitElement {
 
 	_handleAutocompleteList(ev) {
 		if (ev.target.tagName === 'LI') {
-			this.textInput = this.searchInput.value;
 			this.searchInput.value = this.searchInput.value.replaceAll(
 				this.currentMatch,
 				ev.target.textContent.trim()
