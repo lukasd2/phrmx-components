@@ -16,18 +16,8 @@
 		}
 	</style>
 	<body>
-		<query-text
-			rootApiEndpoint="https://my.api.mockaroo.com/"
-			placeholderText="Cerca i contenuti"
-		>
-		</query-text>
-		<script>
-			const myElement = document.querySelector('query-text');
-			myElement.addEventListener('search-query-event', e => {
-				console.log(e);
-				console.log(e.detail.searchedQuery);
-			});
-		</script>
+		<query-text placeholderText="Cerca tra i contenuti..."> </query-text>
+
 		<script type="module" src="../query-text.js"></script>
 	</body>
 </html>

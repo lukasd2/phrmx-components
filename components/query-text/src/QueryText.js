@@ -25,7 +25,7 @@ export class QueryText extends LitElement {
 
 	constructor() {
 		super();
-		this.placeholderText = 'Cerca per esplorare i contenuti disponibili';
+		this.placeholderText = 'Search for anything...';
 		this.textInput = '';
 		this.mintextInputLenght = 2;
 		this.maxAutocompleteSuggestions = 10;
@@ -63,7 +63,8 @@ export class QueryText extends LitElement {
 	}
 
 	updateDictionariesInfo() {
-		if (Object.keys(this.dictionaries).length === 0) return null;
+		if (!this.dictionaries || Object.keys(this.dictionaries).length === 0)
+			return null;
 		// pipe or function reducer would be ideal for cleaner code. The choice is to not add helper functions for now
 		// TODO: Possibile improvement at next iteration, add loadash utility library
 		const extractedPrefixes = this.extractPrefixesFromDictionaries();
@@ -119,6 +120,7 @@ export class QueryText extends LitElement {
 		if (this.isTextInputLenghtGreaterThanThreshold(textInput)) {
 			const pressedKey = ev.code || ev.key;
 			if (pressedKey === 'Enter' || pressedKey === 13) {
+				console.warn(textInput);
 				const event = new CustomEvent('search-query-event', {
 					detail: {
 						searchedQuery: textInput,
@@ -129,10 +131,10 @@ export class QueryText extends LitElement {
 				this.dispatchEvent(event);
 			} else if (this.isQueryStringEligibleForAutocompletion()) {
 				this.showSearchSuggestions = true;
-				this.autocompleteResults = this.queryConstructor();
-				this.autocompleteResults = this.autocompleteResults.slice(
-					0,
-					this.maxAutocompleteSuggestions
+
+				const fullAutocompleteResults = this.queryConstructor();
+				this.autocompleteResults = this.removeResultsIfHigherThanThreshold(
+					fullAutocompleteResults
 				);
 			} else {
 				this.showSearchSuggestions = false;
@@ -141,8 +143,8 @@ export class QueryText extends LitElement {
 	}
 
 	_handleAutocompleteList(ev) {
-		console.debug('_handleAutocompleteList', ev);
 		if (ev.target.tagName === 'LI') {
+			this.textInput = this.searchInput.value;
 			this.searchInput.value = this.searchInput.value.replaceAll(
 				this.currentMatch,
 				ev.target.textContent.trim()
@@ -157,6 +159,7 @@ export class QueryText extends LitElement {
 		textInput.length > this.mintextInputLenght;
 
 	isQueryStringEligibleForAutocompletion() {
+		if (!this.dictionaries) return false;
 		return (
 			Object.keys(this.dictionaries).length > 0 &&
 			this.doesTextInputContainDefinedPrefixes(this.textInput)
@@ -176,7 +179,6 @@ export class QueryText extends LitElement {
 		if (activePrefix === '' || activePrefix === null) return null;
 
 		const prefixedString = this.prefixMatchedWithRegex(activePrefix);
-
 		if (prefixedString === null || prefixedString === undefined)
 			return null;
 
@@ -192,18 +194,25 @@ export class QueryText extends LitElement {
 			cleanTextWithoutPrefix
 		);
 
-		console.log('findResourcesByMatchingSubString', results);
-
 		return results;
+	}
+
+	removeResultsIfHigherThanThreshold(fullAutocompleteResults) {
+		if (
+			fullAutocompleteResults !== null &&
+			fullAutocompleteResults.length > this.maxAutocompleteSuggestions
+		) {
+			return fullAutocompleteResults.slice(
+				0,
+				this.maxAutocompleteSuggestions
+			);
+		} else return fullAutocompleteResults;
 	}
 
 	extractLastPrefixToBeAutocompleted() {
 		const textInput = this.textInput;
 		const indicesOfLastPrefixes = {};
-		this.currentAutocompletedWordIndexes = {
-			start: 0,
-			end: 0,
-		};
+
 		// initialized to be lower than -1 because of: String.indexOf() --> -1
 		let highestPrefixIndex = -2;
 		let lastPrefix = '';
@@ -277,7 +286,6 @@ export class QueryText extends LitElement {
 
 	composeSearchResultsTemplate = () => {
 		if (this.autocompleteResults) {
-			console.log('searchResults appeared', this.autocompleteResults);
 			const generatedTemplate = this.autocompleteResults.map(result => {
 				return html` <li tabindex="0">${result.item}</li>`;
 			});
@@ -295,7 +303,7 @@ export class QueryText extends LitElement {
 					placeholder="${this.placeholderText}"
 					maxlength="150"
 				/>
-				<!-- put search button here -->
+				<!-- TODO: put search button here -->
 				<slot></slot>
 			</div>
 			<ul class="search-results" @click=${this._handleAutocompleteList}>

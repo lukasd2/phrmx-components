@@ -3,12 +3,10 @@ import { html, fixture, expect } from '@open-wc/testing';
 import '../query-text.js';
 
 describe('QueryText', () => {
-	it('has a default placeholderText "Cerca per esplorare i contenuti disponibili', async () => {
+	it('has a default placeholderText "Search for anything...', async () => {
 		const el = await fixture(html`<query-text></query-text>`);
 
-		expect(el.placeholderText).to.equal(
-			'Cerca per esplorare i contenuti disponibili'
-		);
+		expect(el.placeholderText).to.equal('Search for anything...');
 	});
 	/* 
 	it('increases the counter on button click', async () => {

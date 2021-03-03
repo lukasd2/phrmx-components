@@ -1,5 +1,5 @@
 {
-	"name": "query-text",
+	"name": "@phr/query-text",
 	"version": "0.0.0",
 	"description": "Webcomponent query-text following open-wc recommendations",
 	"author": "query-text",
