@@ -26,18 +26,6 @@ export class ResultMedia extends LitElement {
     console.debug('changedProperty', changedProperties); // logs previous values
   }
 
-  // tested solution to be adopted.
-
-  /*  _handleTooltipOnMouseover(ev) {
-    console.debug('_handleTooltipOnMouseover', ev);
-    if (ev.target.tagName === 'IMG') {
-      console.warn('Mouseover image element');
-      const tooltip = this.shadowRoot.querySelector('.tooltip');
-      tooltip.style.display = 'block'; 
-    } else {
-      console.log('you moved out');
-    }
-  } */
   _dragStartItemHandler(ev) {
     const parentElement = ev.target.parentElement;
     const thumnbailElement = ev.target;
