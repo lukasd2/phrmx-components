@@ -5,21 +5,23 @@ export const resultMediaStyles = css`
     grid-column: 5/13;
     border: 1px solid black;
     border-radius: 5px;
-    padding: 25px;
+    padding: 20px;
   }
 
   .thumbnail-list {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+
     list-style: none;
     padding: 0;
     margin: 0;
-    display: flex;
-    min-height: 50vh;
+    min-height: 250px;
     flex-wrap: wrap;
-    margin: 0.25em;
   }
 
   .thumbnail-element {
-    margin: 0.5em 0.8em 0.5em 0.8em;
+    margin: 10px 10px 10px 10px;
     box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1),
       0 0 0 1px rgba(10, 10, 10, 0.02);
     width: 100px;
@@ -27,7 +29,6 @@ export const resultMediaStyles = css`
     overflow: hidden;
     border-radius: 10px;
     box-sizing: border-box;
-
   }
 
   .thumbnail-element .image-thumbnail {
@@ -36,11 +37,10 @@ export const resultMediaStyles = css`
 
   .thumbnail-element:focus .image-thumbnail {
     transform: scale(1.3);
-    border: solid 1px #00b4cc;
-    box-shadow: 0 0 5px 1px #00b4cc;
   }
 
-  .thumbnail-element:hover {
+  .thumbnail-element:hover,
+  .thumbnail-element:focus {
     border: solid 1px #00b4cc;
     box-shadow: 0 0 5px 1px #00b4cc;
   }
@@ -50,31 +50,31 @@ export const resultMediaStyles = css`
     transform: scale(1.3);
   }
 
+  .thumbnail-element > .thumbnail-tooltip {
+    display: none;
+  }
+
+  .thumbnail-element:hover > .thumbnail-tooltip {
+    position: absolute;
+    display: block;
+    margin-top: -50px;
+  }
+
+  .thumbnail-tooltip {
+    opacity: 1;
+    background: #3c4446;
+    display: flex;
+    padding: 20px;
+    border-radius: 15px;
+    color: #ffffff;
+    z-index: 10;
+  }
+
   .image-thumbnail {
     max-height: 100%;
     min-width: 100%;
     object-fit: cover;
     vertical-align: bottom;
     border-radius: 10px;
-  }
-
-  [data-tooltip]::before {
-    content: attr(data-tooltip);
-    position: absolute;
-    opacity: 0;
-    transition: all 0.15s ease;
-    padding: 10px;
-    color: #f4f4f4;
-    max-width: 100px;
-    border-radius: 10px;
-    box-shadow: 2px 2px 1px silver;
-    z-index: 10;
-  }
-
-  [data-tooltip]:hover::before {
-    opacity: 1;
-    background: #00b4cc;
-    margin-top: -80px;
-    margin-left: 20px;
   }
 `;

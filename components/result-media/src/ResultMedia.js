@@ -14,68 +14,7 @@ export class ResultMedia extends LitElement {
 
   constructor() {
     super();
-    this.answerSet = [
-      {
-        thumbnail_url: 'https://picsum.photos/id/999/150/200',
-        film_name: 'Mattis.avi',
-        start: 0.3027,
-        stop: 1.2742,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/998/150/200',
-        film_name: 'InEstRisus.avi',
-        start: 0.7541,
-        stop: 1.613,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/997/150/200',
-        film_name: 'EuSapienCursus.avi',
-        start: 0.3034,
-        stop: 1.7323,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/996/150/200',
-        film_name: 'DolorVel.mp3',
-        start: 0.1617,
-        stop: 1.8253,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/995/150/200',
-        film_name: 'AcTellus.avi',
-        start: 0.3547,
-        stop: 1.9371,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/994/150/200',
-        film_name: 'VestibulumAnteIpsum.avi',
-        start: 0.6928,
-        stop: 1.486,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/993/150/200',
-        film_name: 'ErosVestibulumAc.mp3',
-        start: 0.2201,
-        stop: 1.9599,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/992/150/200',
-        film_name: 'DisParturientMontes.mp3',
-        start: 0.6717,
-        stop: 1.7109,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/991/150/200',
-        film_name: 'InHacHabitasse.mp3',
-        start: 0.6197,
-        stop: 1.9317,
-      },
-      {
-        thumbnail_url: 'https://picsum.photos/id/990/150/200',
-        film_name: 'FeugiatNon.mov',
-        start: 0.245,
-        stop: 1.1917,
-      },
-    ];
+    this.answerSet = [];
   }
 
   connectedCallback() {
@@ -89,17 +28,32 @@ export class ResultMedia extends LitElement {
 
   // tested solution to be adopted.
 
-  /* _handleTooltipOnMouseover(ev) {
+  /*  _handleTooltipOnMouseover(ev) {
     console.debug('_handleTooltipOnMouseover', ev);
     if (ev.target.tagName === 'IMG') {
       console.warn('Mouseover image element');
       const tooltip = this.shadowRoot.querySelector('.tooltip');
-      tooltip.style.display = 'block';
+      tooltip.style.display = 'block'; 
     } else {
       console.log('you moved out');
     }
   } */
+  _dragStartItemHandler(ev) {
+    const parentElement = ev.target.parentElement;
+    const thumnbailElement = ev.target;
 
+    if (parentElement.tagName === 'LI') {
+      let itemData = {
+        segmenttype: parentElement.dataset.segmenttype,
+        segmentname: parentElement.dataset.segmentname,
+        start: parentElement.dataset.start,
+        end: parentElement.dataset.end,
+      };
+
+      ev.dataTransfer.setData('text/plain', JSON.stringify(itemData));
+      ev.dataTransfer.setData('text/uri-list', thumnbailElement.src);
+    }
+  }
   composeThumbnailsTemplate = () => {
     if (this.answerSet) {
       console.log('searchResults appeared', this.answerSet);
@@ -107,11 +61,14 @@ export class ResultMedia extends LitElement {
         answer => html`
           <li
             class="thumbnail-element"
-            data-tooltip="Titolo: ${answer.film_name}"
+            draggable="true"
+            data-segmentname="${answer.film_name}"
+            data-segmenttype="mp4"
             data-start="${answer.start}"
             data-end="${answer.start}"
             tabindex="0"
           >
+            <span class="thumbnail-tooltip">Titolo: ${answer.film_name}</span>
             <img
               class="image-thumbnail"
               src=${answer.thumbnail_url}
@@ -125,7 +82,10 @@ export class ResultMedia extends LitElement {
   };
 
   render() {
-    return html` <ul class="thumbnail-list">
+    return html` <ul
+      class="thumbnail-list"
+      @dragstart=${this._dragStartItemHandler}
+    >
       ${this.answerSet ? html` ${this.composeThumbnailsTemplate()} ` : ''}
     </ul>`;
   }
