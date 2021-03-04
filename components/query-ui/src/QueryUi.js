@@ -8,7 +8,7 @@ export class QueryUi extends LitElement {
 			:host {
 				display: grid;
 				grid-template-columns: repeat(12, 1fr);
-				grid-column: 6/13;
+				grid-column: 4/12;
 			}
 		`;
 	}

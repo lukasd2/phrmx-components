@@ -22,7 +22,7 @@
   "dependencies": {
     "lit-element": "^2.4.0",
     "lit-html": "^1.3.0",
-    "query-text": "^0.0.0",
+    "query-text": "^0.1.0-alpha.0",
     "query-ui": "^0.0.0",
     "result-media": "^0.0.0"
   },
