@@ -1,6 +1,6 @@
 {
-	"name": "@phrmx/query-text",
-	"version": "0.0.0",
+	"name": "query-text",
+	"version": "0.1.0-alpha.1",
 	"keywords": [
 		"LitElement",
 		"lit-html",

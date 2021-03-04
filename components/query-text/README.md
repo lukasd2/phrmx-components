@@ -1,7 +1,9 @@
 # \<query-text>
 
 Reusable Web Component based on LitElement. It provides search functionality within multi-keyed dictionary of strings.
+
 It extracts keys from the dictionary and uses them as prefixes for autocompletion purposes. When key: <ENTER> is pressed, it emits an event (through custom event bubble) with the actual value of query string.
+
 The main goal is to provide fuzzy search with autocompletion when user types into search bar.
 
 This webcomponent follows the [open-wc](https://github.com/open-wc/open-wc) recommendation.
