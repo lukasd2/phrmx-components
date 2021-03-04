@@ -1,8 +1,16 @@
 {
-	"name": "@phr/query-text",
+	"name": "@phrmx/query-text",
 	"version": "0.0.0",
-	"description": "Webcomponent query-text following open-wc recommendations",
-	"author": "query-text",
+	"keywords": [
+		"LitElement",
+		"lit-html",
+		"WebComponents",
+		"Search Component",
+		"Autocomplete Search",
+		"javascript"
+	],
+	"description": "query-text, search and autocomplete web component based on LitElement",
+	"author": "lukasd2",
 	"license": "MIT",
 	"main": "index.js",
 	"module": "index.js",
@@ -55,5 +63,9 @@
 			"eslint --fix",
 			"prettier --write"
 		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/lukasd2/QueryText"
 	}
 }

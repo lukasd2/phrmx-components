@@ -1,5 +1,9 @@
 # \<query-text>
 
+Reusable Web Component based on LitElement. It provides search functionality within multi-keyed dictionary of strings.
+It extracts keys from the dictionary and uses them as prefixes for autocompletion purposes. When key: <ENTER> is pressed, it emits an event (through custom event bubble) with the actual value of query string.
+The main goal is to provide fuzzy search with autocompletion when user types into search bar.
+
 This webcomponent follows the [open-wc](https://github.com/open-wc/open-wc) recommendation.
 
 ## Installation
@@ -16,6 +20,38 @@ npm i query-text
 </script>
 
 <query-text></query-text>
+```
+
+## Implementation
+
+-   Takes a dictionary in input {prefix, dictionary}:
+
+```javascript
+{
+	'prefix1': [
+		'string1',
+	    ...
+        'string(n)',
+	],
+	'prefix(n)': [
+        'string1',
+	    ...
+        'string(n)',
+    ],
+    ...
+}
+```
+
+-   Returns an event "searchedQuery" with the searched query text
+
+```javascript
+let event = new CustomEvent('search-query-event', {
+	detail: {
+		searchedQuery: textInput,
+	},
+	bubbles: true,
+	composed: true,
+});
 ```
 
 ## Linting with ESLint, Prettier, and Types
@@ -93,35 +129,3 @@ npm start
 ```
 
 To run a local development server that serves the basic demo located in `demo/index.html`
-
-## Implementation
-
--   Takes a dictionary in input {pref, dict}:
-
-```javascript
-{
-	'prefix1': [
-		'string1',
-	    ...
-        'string(n)',
-	],
-	'prefix(n)': [
-        'string1',
-	    ...
-        'string(n)',
-    ],
-    ...
-}
-```
-
--   Returns an event with the searched query to the API
-
-```javascript
-let event = new CustomEvent('search-query-event', {
-	detail: {
-		searchedQuery: textInput,
-	},
-	bubbles: true,
-	composed: true,
-});
-```

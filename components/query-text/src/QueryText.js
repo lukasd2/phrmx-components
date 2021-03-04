@@ -79,8 +79,7 @@ export class QueryText extends LitElement {
 	}
 
 	extractPrefixesFromDictionaries() {
-		if (Object.keys(this.dictionaries).length === 0)
-			return this.dictionaries;
+		if (Object.keys(this.dictionaries).length === 0) return [];
 
 		const extractedPrefixesFromDicts = [];
 		for (const prefix of Object.keys(this.dictionaries)) {
