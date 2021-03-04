@@ -119,7 +119,6 @@ export class QueryText extends LitElement {
 		if (this.isTextInputLenghtGreaterThanThreshold(textInput)) {
 			const pressedKey = ev.code || ev.key;
 			if (pressedKey === 'Enter' || pressedKey === 13) {
-				console.warn(textInput);
 				const event = new CustomEvent('search-query-event', {
 					detail: {
 						searchedQuery: textInput,
