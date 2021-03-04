@@ -1,6 +1,6 @@
 {
 	"name": "query-text",
-	"version": "0.1.0-alpha.1",
+	"version": "0.1.0",
 	"keywords": [
 		"LitElement",
 		"lit-html",
