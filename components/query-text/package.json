@@ -12,8 +12,8 @@
 	"description": "query-text, search and autocomplete web component based on LitElement",
 	"author": "lukasd2",
 	"license": "MIT",
-	"main": "index.js",
-	"module": "index.js",
+	"main": "query-text.js",
+	"module": "query-text.js",
 	"scripts": {
 		"start": "web-dev-server",
 		"lint": "eslint --ext .js,.html . --ignore-path .gitignore && prettier \"**/*.js\" --check --ignore-path .gitignore",

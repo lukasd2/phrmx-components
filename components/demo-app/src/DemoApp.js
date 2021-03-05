@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit-element';
-import '../../query-ui/query-ui.js';
+import 'query-ui';
 
 export class DemoApp extends LitElement {
   static get properties() {

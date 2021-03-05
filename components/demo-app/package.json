@@ -6,8 +6,7 @@
     "eslint-config-prettier": "^7.2.0",
     "husky": "^4.3.8",
     "lint-staged": "^10.5.4",
-    "prettier": "^2.2.1",
-    "query-ui": "^0.0.0"
+    "prettier": "^2.2.1"
   },
   "scripts": {
     "lint": "eslint --ext .js,.html . --ignore-path .gitignore && prettier \"**/*.js\" --check --ignore-path .gitignore",
@@ -22,9 +21,7 @@
   "dependencies": {
     "lit-element": "^2.4.0",
     "lit-html": "^1.3.0",
-    "query-text": "^0.1.0-alpha.0",
-    "query-ui": "^0.0.0",
-    "result-media": "^0.0.0"
+    "query-ui": "^0.0.0"
   },
   "eslintConfig": {
     "extends": [

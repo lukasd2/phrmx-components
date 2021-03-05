@@ -4,8 +4,8 @@
   "description": "Webcomponent result-media following open-wc recommendations",
   "author": "result-media",
   "license": "MIT",
-  "main": "index.js",
-  "module": "index.js",
+  "main": "result-media.js",
+  "module": "result-media.js",
   "scripts": {
     "start": "web-dev-server",
     "lint": "eslint --ext .js,.html . --ignore-path .gitignore && prettier \"**/*.js\" --check --ignore-path .gitignore",

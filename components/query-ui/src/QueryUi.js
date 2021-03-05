@@ -1,6 +1,6 @@
 import { html, css, LitElement } from 'lit-element';
-import '../../query-text/query-text.js';
-import '../../result-media/result-media.js';
+import 'query-text';
+import 'result-media';
 
 export class QueryUi extends LitElement {
 	static get styles() {
