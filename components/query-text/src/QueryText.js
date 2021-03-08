@@ -20,6 +20,8 @@ export class QueryText extends LitElement {
 			autocompleteResults: { type: Array },
 			showSearchSuggestions: { type: Boolean },
 			currentMatch: { type: String },
+			activePrefix: { type: String },
+			distinctAutocompletes: { type: Array },
 		};
 	}
 
@@ -41,6 +43,8 @@ export class QueryText extends LitElement {
 		this.showSearchSuggestions = false;
 		this.searchInput = '';
 		this.currentMatch = '';
+		this.activePrefix = '';
+		this.distinctAutocompletes = [];
 	}
 
 	/* LIFECYCLE METHODS */
@@ -142,10 +146,20 @@ export class QueryText extends LitElement {
 
 	_handleAutocompleteList(ev) {
 		if (ev.target.tagName === 'LI') {
-			this.searchInput.value = this.searchInput.value.replaceAll(
+			let prefixAutocompleteText = `${
+				this.activePrefix
+			}${ev.target.textContent.trim()}`;
+
+			this.searchInput.value = this.searchInput.value.replace(
 				this.currentMatch,
-				ev.target.textContent.trim()
+				prefixAutocompleteText
 			);
+
+			if (
+				this.distinctAutocompletes.indexOf(prefixAutocompleteText) ===
+				-1
+			)
+				this.distinctAutocompletes.push(prefixAutocompleteText);
 		}
 		this.showSearchSuggestions = false;
 	}
@@ -171,9 +185,15 @@ export class QueryText extends LitElement {
 	}
 
 	queryConstructor() {
+		if (this.distinctAutocompletes.length > 0) {
+			// exclude previous autocompletions from new proposals
+			this.textInput = this.findUnresolvedPrefixes();
+		}
 		const activePrefix = this.extractLastPrefixToBeAutocompleted();
 
 		if (activePrefix === '' || activePrefix === null) return null;
+
+		this.activePrefix = activePrefix;
 
 		const prefixedString = this.prefixMatchedWithRegex(activePrefix);
 		if (prefixedString === null || prefixedString === undefined)
@@ -192,6 +212,26 @@ export class QueryText extends LitElement {
 		);
 
 		return results;
+	}
+
+	findUnresolvedPrefixes() {
+		let unresolvedPrefixes = this.textInput;
+
+		this.distinctAutocompletes.forEach(autocomplete => {
+			if (this.textInput.includes(autocomplete)) {
+				unresolvedPrefixes = unresolvedPrefixes.replaceAll(
+					autocomplete,
+					''
+				);
+			} else {
+				// remove previous autocompleted words
+				this.distinctAutocompletes.splice(
+					this.distinctAutocompletes.indexOf(autocomplete),
+					1
+				);
+			}
+		});
+		return unresolvedPrefixes;
 	}
 
 	removeResultsIfHigherThanThreshold(fullAutocompleteResults) {
