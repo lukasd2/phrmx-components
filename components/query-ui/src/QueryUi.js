@@ -1,4 +1,6 @@
 import { html, css, LitElement } from 'lit-element';
+import { config } from '../config.js';
+
 import 'query-text';
 import 'result-media';
 
@@ -25,8 +27,8 @@ export class QueryUi extends LitElement {
 	constructor() {
 		super();
 		this.rootApiEndpoint = 'https://my.api.mockaroo.com/';
-		this.dictionariesRoute = 'dictionaries.json?key=d8dae1b0'; // not hiding keys for demo/testing purposes
-		this.searchRoute = 'answerset.json?key=d8dae1b0';
+		this.dictionariesRoute = `dictionaries.json?${config.apiKey}`; // not hiding keys for demo/testing purposes
+		this.searchRoute = `answerset.json?${config.apiKey}`;
 	}
 
 	connectedCallback() {
@@ -108,7 +110,14 @@ export class QueryUi extends LitElement {
 				.dictionaries=${this.dictionaries}
 				placeholderText="Inserisci il testo da cercare..."
 			></query-text>
-			<result-media .answerSet=${this.searchResults}></result-media>
+			<result-media .answerSet=${this.searchResults}>
+				${this.searchInProgress
+					? html`
+							<h1 slot="searchInProgress">Search in progress!</h1>
+					  `
+					: ''}
+				></result-media
+			>
 		`;
 	}
 }
