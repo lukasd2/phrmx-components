@@ -1,29 +1,15 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en-GB">
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {
-      background: #fafafa;
-    }
-  </style>
-</head>
-<body>
-  <div id="demo"></div>
-
-  <script type="module">
-    import { html, render } from 'lit-html';
-    import '../track-editor.js';
-
-    const title = 'Hello owc World!';
-    render(
-      html`
-        <track-editor .title=${title}>
-          some more light-dom
-        </track-editor>
-      `,
-      document.querySelector('#demo')
-    );
-  </script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <track-editor></track-editor>
+    
+    <script type="module" src="../track-editor.js"></script>
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"
+    ></script>
+  </body>
 </html>
