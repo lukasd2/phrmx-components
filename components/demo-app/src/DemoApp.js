@@ -6,6 +6,7 @@ export class DemoApp extends LitElement {
   static get properties() {
     return {
       title: { type: String },
+      dragEnd: { type: Boolean },
     };
   }
 
@@ -27,13 +28,24 @@ export class DemoApp extends LitElement {
   constructor() {
     super();
     this.title = 'Demo APP: Components integration';
+    this.dragEnd = false;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('drag-end-event', this._onDragEnd);
+  }
+
+  _onDragEnd(ev) {
+    console.debug('_handleDragEnd', ev.detail.dragEnd);
+    this.dragEnd = ev.detail.dragEnd;
   }
 
   render() {
     return html`
       <h1>${this.title}</h1>
-      <track-editor></track-editor>
       <query-ui></query-ui>
+      <track-editor ?dragEnd=${this.dragEnd}></track-editor>
     `;
   }
 }
