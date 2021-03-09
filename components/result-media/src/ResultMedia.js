@@ -29,6 +29,7 @@ export class ResultMedia extends LitElement {
   _dragStartItemHandler(ev) {
     const parentElement = ev.target.parentElement;
     const thumnbailElement = ev.target;
+    thumnbailElement.classList.add('dragging');
 
     if (parentElement.tagName === 'LI') {
       let itemData = {
@@ -37,14 +38,20 @@ export class ResultMedia extends LitElement {
         start: parentElement.dataset.start,
         end: parentElement.dataset.end,
       };
+      ev.dataTransfer.effectAllowed = 'copy';
 
       ev.dataTransfer.setData('text/plain', JSON.stringify(itemData));
       ev.dataTransfer.setData('text/uri-list', thumnbailElement.src);
     }
   }
+
+  _onDragEnd(ev) {
+    ev.preventDefault();
+    ev.target.classList.remove('dragging')
+  }
+
   composeThumbnailsTemplate = () => {
     if (this.answerSet) {
-      console.log('searchResults appeared', this.answerSet);
       const generatedTemplate = this.answerSet.map(
         answer => html`
           <li
@@ -73,8 +80,10 @@ export class ResultMedia extends LitElement {
     return html` <ul
       class="thumbnail-list"
       @dragstart=${this._dragStartItemHandler}
+      @dragend=${this._onDragEnd}
     >
       ${this.answerSet ? html` ${this.composeThumbnailsTemplate()} ` : ''}
+      <slot name="searchInProgress"></slot>
     </ul>`;
   }
 }

@@ -77,4 +77,13 @@ export const resultMediaStyles = css`
     vertical-align: bottom;
     border-radius: 10px;
   }
+
+  img {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  img.dragging {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 `;
