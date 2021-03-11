@@ -9,6 +9,7 @@ export class TrackEditor extends LitElement {
       dragEnd: { type: Boolean },
       timer: { type: Number },
       actualTime: { type: Number },
+      images: { type: Array },
     };
   }
 
@@ -44,27 +45,16 @@ export class TrackEditor extends LitElement {
     this.dropMusicArea = this.shadowRoot.querySelector('.music-track');
     this.marker = this.shadowRoot.getElementById('marker');
     this.divideIntoTimeSegments();
-    /* marker.addEventListener('mousedown', ev => {
-      console.log(ev.target.offsetLeft);
-      const startX = ev.target.offsetLeft;
-      const mouseX = ev.clientX;
-      ev.target.style.transform = 'translateX(' + (mouseX - startX) + 'px)';
-    }); */
-
-    /*    this.timer = this.shadowRoot.getElementById('timer');
-    this.secondsCounter();
-    this.divideIntoTimeSegments(this.dropVideoArea); */
   }
 
   divideIntoTimeSegments() {
     const dropVideoArea = this.dropVideoArea;
-    console.log(dropVideoArea);
-    console.log(getComputedStyle(dropVideoArea).width);
+    //console.log(getComputedStyle(dropVideoArea).width);
     const segmentWidth = 500;
     const totalWidth = dropVideoArea.offsetWidth;
 
     let result = Math.floor(totalWidth / segmentWidth);
-    console.log('result', result);
+    //console.log('result', result);
 
     const newElement = document.createElement('div');
     newElement.classList.add('time-segment');
@@ -159,25 +149,50 @@ export class TrackEditor extends LitElement {
     const obj = this.extractDataFromDraggedElement(data);
 
     const element = document.createElement('div');
-
+    const row = document.createElement('div');
+    // testing direct append of image element into track
     for (const [key, value] of Object.entries(obj)) {
       element.setAttribute(`${key}`, `${value}`);
     }
+    // testing row into track
+    for (const [key, value] of Object.entries(obj)) {
+      row.setAttribute(`${key}`, `${value}`);
+    }
+    row.addEventListener('click', ev => {
+      ev.target.classList.toggle('selected');
+    });
 
     element.classList.add('timeline-element');
+    row.classList.add('video-row');
 
     const img = document.createElement('img');
     img.src = dataSrc;
     element.appendChild(img);
     if (ev.target.className === 'time-segment') {
-      console.debug('time segment!');
-      ev.target.style.background = `url(${dataSrc}) repeat space`;
+      //console.debug('time segment!');
+      ev.target.appendChild(row);
+      row.style.background = `url(${dataSrc}) repeat space`;
+      row.style.backgroundPosition = `center `;
+      row.style.backgroundRepeat = 'repeat space';
+      /* ev.target.style.background = `url(${dataSrc}) repeat space`;
       ev.target.style.backgroundPosition = `center `;
-      ev.target.style.backgroundRepeat = 'repeat space';
+      ev.target.style.backgroundRepeat = 'repeat space'; */
       ev.target.classList.add('segment-active');
+      this.preloadImages(dataSrc);
     } else {
       ev.target.appendChild(element);
     }
+  }
+
+  preloadImages(imgSrc) {
+    const event = new CustomEvent('preload-track', {
+      detail: {
+        images: imgSrc,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   extractDataFromDraggedElement(data) {
@@ -187,53 +202,50 @@ export class TrackEditor extends LitElement {
 
   secondsCounter = () => {
     console.log(this.timer);
-
+    const startTime = Date.now();
     this.interval = window.setInterval(() => {
-      this.timer += 1;
+      //this.timer += 1;
       this._updateMarkerPosition2();
-    }, 10);
+      const elapsedTime = Date.now() - startTime;
+      const time = (elapsedTime / 1000).toFixed(2);
+      this.timer = time;
+      this.actualTime = elapsedTime / 10;
+      //document.getElementById('timer').innerHTML = time
+    }, 100);
   };
 
   _updateMarkerPosition = ev => {
     const container = this.shadowRoot.querySelector('.timeline-container');
-    //console.log(this.marker);
-    //const startX = ev.target.offsetLeft;
     const startX = container.getBoundingClientRect().left;
     //problem offset starts from 8/9 px, it should be 0
     //const startX = ev.target.offsetLeft;
     const mouseX = ev.clientX;
-    /*     console.log('start', startX);
-    console.log('mouseX', mouseX); */
     this.marker.style.transform = 'translateX(' + (mouseX - startX) + 'px)';
+    //this.actualTime = parseInt(mouseX, 10);
     this.actualTime = parseInt(mouseX, 10);
   };
 
   _updateMarkerPosition2 = () => {
     const container = this.shadowRoot.querySelector('.timeline-container');
-    //console.log(this.marker);
-    //console.log(ev.target.offsetLeft);
     //const startX = ev.target.offsetLeft;
     const startX = container.getBoundingClientRect().left;
     //problem offset starts from 8/9 px, it should be 0
     //const startX = ev.target.offsetLeft;
-    const mouseX = this.timer;
-    console.log('start', startX);
-    console.log('mouseX', mouseX);
+    const mouseX = this.actualTime;
     this.marker.style.transform = 'translateX(' + (mouseX - startX) + 'px)';
     this.actualTime = parseInt(mouseX, 10);
+    //this.actualTime = parseInt(mouseX);
   };
 
   formatTime(time) {
-    console.log(time);
     let houndreds = time;
 
     let seconds = Math.floor((houndreds / 100) % 60);
 
-    return seconds + ':' + houndreds;
+    return seconds + '.' + houndreds.toFixed(0);
   }
 
   _handleMarkerPress(ev) {
-    console.log(this.dropVideoArea);
     this.shadowRoot.addEventListener('mousemove', this._updateMarkerPosition);
   }
 

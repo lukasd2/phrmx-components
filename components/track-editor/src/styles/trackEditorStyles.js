@@ -46,7 +46,7 @@ export const trackEditorStyles = css`
   }
   .hoverWithDrag {
     box-sizing: border-box;
-    border: 4px dotted salmon;
+    border: 4px dotted white;
     background-color: tomato;
   }
   .timeline-element {
@@ -82,16 +82,25 @@ export const trackEditorStyles = css`
 
   .time-segment {
     display: flex;
-    height: 60%;
+    height: 100%;
     flex: 1;
-    border: 2px solid aqua;
-    border-radius: 10px;
+    border-right: 2px solid aqua;
+    align-items: center;
   }
   .time-segment.segment-active {
     cursor: move;
   }
 
   .time-segment.segment-active:hover {
-    border: 1px solid red;
+  }
+
+  .video-row {
+    height: 75%;
+    width: 100%;
+    border-radius: 10px;
+  }
+
+  .video-row.selected {
+    border: 4px solid blue;
   }
 `;
