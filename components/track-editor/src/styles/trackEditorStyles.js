@@ -4,16 +4,19 @@ export const trackEditorStyles = css`
   :host {
     display: grid;
     grid-column: 1/13;
+    overflow-x: hidden;
+    --zoom-factor: 0px;
   }
+
   .track-editor {
-    width: 100%;
-    height: 33vh;
     background-color: #fff;
     border: 2px solid #1a2b42;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     min-height: 100px;
+    width: 100%;
+    overflow-x: scroll;
   }
 
   img {
@@ -24,10 +27,28 @@ export const trackEditorStyles = css`
     opacity: 0.5;
     transform: scale(0.8);
   }
+
+  .tracks {
+    display: flex;
+    flex-direction: row;
+    overflow: auto;
+  }
+
+  .tracks-info {
+    display: flex;
+    flex-direction: column;
+    width: 50px;
+    justify-content: center;
+  }
+
+  .tracks-info .track-type {
+    height: 150px;
+  }
+
   .video-track {
     display: flex;
     flex-direction: row;
-    height: 50%;
+    height: 150px;
     background-color: aliceblue;
     align-items: center;
   }
@@ -35,7 +56,7 @@ export const trackEditorStyles = css`
     display: flex;
     align-items: center;
     flex-direction: row;
-    height: 50%;
+    height: 150px;
     background-color: lightsalmon;
   }
   .video-track.hoverWithDrag img {
@@ -67,6 +88,7 @@ export const trackEditorStyles = css`
   .timeline-container {
     position: relative;
     height: 100%;
+    width: 10000px;
   }
 
   .timeline-marker {
@@ -83,24 +105,63 @@ export const trackEditorStyles = css`
   .time-segment {
     display: flex;
     height: 100%;
-    flex: 1;
-    border-right: 2px solid aqua;
+    /* width: calc(var(--default-lenght) - var(--zoom-factor)); */
+    width: var(--zoom-factor);
     align-items: center;
+    position: relative;
+    --default-lenght: 500px;
+    flex-grow: 0;
+    flex-shrink: 0;
   }
   .time-segment.segment-active {
     cursor: move;
   }
 
-  .time-segment.segment-active:hover {
+  .track-element {
+    margin: 20px 0;
+  }
+
+  .time-segment:hover {
+    cursor: move;
   }
 
   .video-row {
     height: 75%;
     width: 100%;
     border-radius: 10px;
+    position: relative;
   }
 
   .video-row.selected {
     border: 4px solid blue;
+  }
+
+  #zoom {
+    /* direction: rtl; */
+  }
+
+  .resizerLeft {
+    position: absolute;
+    user-select: none;
+    background: blue;
+    width: 25px;
+    height: 75%;
+    top: 0px;
+    left: 10px;
+    cursor: w-resize;
+    margin: auto;
+    bottom: 0px;
+  }
+  .resizerRight {
+    position: absolute;
+    background: red;
+    user-select: none;
+    width: 25px;
+    height: 75%;
+    top: 0px;
+    right: 10px;
+    cursor: w-resize;
+    margin: auto;
+    bottom: 0px;
   }
 `;
