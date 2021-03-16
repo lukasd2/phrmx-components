@@ -11,7 +11,6 @@ export class TrackEditor extends LitElement {
       trackElements: { type: Array },
       actualTime: { type: Number },
       timeSegmentWidth: { type: Number },
-      timeLineContainerWidth: { type: Number },
       zoomFactor: { type: Number },
       timeEnd: { type: Number },
       timeStart: { type: Number },
@@ -29,7 +28,6 @@ export class TrackEditor extends LitElement {
     this.marker;
     this.zoomFactor = 100;
     this.timeSegmentWidth = 500;
-    this.timeLineContainerWidth;
     this.startTime = 0;
     this.dragEnd = true;
     this.timer = 0;
@@ -63,7 +61,6 @@ export class TrackEditor extends LitElement {
     this.timelineContainer = this.shadowRoot.querySelector(
       '.timeline-container'
     );
-    this.timeLineContainerWidth = this.timelineContainer.offsetWidth;
     this.marker = this.shadowRoot.getElementById('marker');
 
     this.createdTracks.forEach(track => {});
@@ -92,7 +89,6 @@ export class TrackEditor extends LitElement {
       // problem cannot reassing attribute in this loop. Also it is complex to getComputedStyle of translateX
       const transformValue = segment.getAttribute('datax');
       const duration = segment.getAttribute('duration');
-      console.warn(duration);
       if (duration !== null && duration !== this.timeSegmentWidth) {
         let segmentWidth = duration * (this.zoomFactor / 100);
         segment.style.width = segmentWidth + 'px';
@@ -208,15 +204,23 @@ export class TrackEditor extends LitElement {
   }
 
   secondsCounter = () => {
-    const startTime = Date.now();
-    this.interval = window.setInterval(() => {
-      //this.timer += 1;
+    //https://stackoverflow.com/questions/26329900/how-do-i-display-millisecond-in-my-stopwatch
+    let timeBegan = null;
+    let started = null;
+
+    if (timeBegan === null) {
+      timeBegan = new Date();
+    }
+
+    const clockRunning = () => {
+      let currentTime = new Date();
+      let timeElapsed = new Date(currentTime - timeBegan);
       this._updateMarkerPosition2();
-      const elapsedTime = Date.now() - startTime;
-      const time = (elapsedTime / 1000).toFixed(2);
-      this.timer = time;
-      this.actualTime = elapsedTime / 10;
-    }, 100);
+
+      this.actualTime = timeElapsed / 10;
+    };
+
+    this.interval = setInterval(clockRunning, 10);
   };
 
   _updateMarkerPosition = ev => {
@@ -236,28 +240,31 @@ export class TrackEditor extends LitElement {
     var offset = newMin - prevMin,
       scale = (newMax - newMin) / (prevMax - prevMin);
     return function (x) {
-      return offset + scale * x;
+      return (offset + scale * x).toFixed(2);
     };
   }
 
   _updateMarkerPosition2 = () => {
-    const container = this.shadowRoot.querySelector('.timeline-container');
-    //const startX = ev.target.offsetLeft;
-    const startX = container.getBoundingClientRect().left;
-    //problem offset starts from 8/9 px, it should be 0
-    //const startX = ev.target.offsetLeft;
+    const startX = this.timelineContainer.getBoundingClientRect().left - 50;
+
     const mouseX = this.actualTime;
-    this.marker.style.transform = 'translateX(' + (mouseX - startX) + 'px)';
-    this.actualTime = parseInt(mouseX, 10);
-    //this.actualTime = parseInt(mouseX);
+    const newMouseX = mouseX * (this.zoomFactor / 100);
+
+    this.marker.style.transform = 'translateX(' + (newMouseX - startX) + 'px)';
+    this.actualTime = parseInt(newMouseX, 10);
   };
 
-  formatTime(time) {
-    let houndreds = time;
+  formatTimeFromHoundreths(time) {
+    const leading0 = number => (number < 10 ? '0' : '');
 
-    let seconds = Math.floor((houndreds / 100) % 60);
+    let mins = parseInt(time / 100 / 60);
+    let secs = parseInt((time / 100) % 60);
+    let huns = parseInt(time % 100);
+    let output = `${leading0(mins)}${mins}:${leading0(secs)}${secs}.${leading0(
+      huns
+    )}${huns}`;
 
-    return seconds + '.' + houndreds.toFixed(0);
+    return output;
   }
 
   _handleMarkerPress(ev) {
@@ -292,6 +299,8 @@ export class TrackEditor extends LitElement {
   _handleTimeSegmentResize = ev => {
     ev.preventDefault();
 
+    const _binding = this;
+
     if (
       ev.target.className === 'resizerLeft' ||
       ev.target.className === 'resizerRight'
@@ -317,8 +326,7 @@ export class TrackEditor extends LitElement {
 
         if (width > minimumSize) {
           const startX = timeSegment.offsetLeft;
-          console.warn(startX);
-
+          console.warn('startX', startX);
           //timeSegment.style.setProperty('--default-lenght', width + 'px');
           timeSegment.style.width = width + 'px';
           timeSegment.setAttribute('time-start', this.timeStart);
@@ -334,6 +342,8 @@ export class TrackEditor extends LitElement {
       const track = this.trackEditor;
 
       const timeSegment = ev.target.parentNode;
+      if (timeSegment.classList.contains('inMotion'));
+      timeSegment.classList.add('inMotion');
 
       window.addEventListener('mousemove', _startMoving);
       window.addEventListener('mouseup', _stopMoving);
@@ -345,12 +355,38 @@ export class TrackEditor extends LitElement {
         const mouseX = ev.pageX;
         const translateXValue = mouseX - startX + track.scrollLeft;
         if (translateXValue >= 0) {
+          let fn = _binding.generateScaleFunction(
+            0,
+            _binding.timeSegmentWidth,
+            0,
+            500
+          );
+
           timeSegment.style.transform = 'translateX(' + translateXValue + 'px)';
           timeSegment.setAttribute('datax', translateXValue);
+          timeSegment.setAttribute(
+            'time-start',
+            _binding.formatTimeFromHoundreths(
+              fn(timeSegment.offsetLeft + translateXValue)
+            )
+          );
+          timeSegment.setAttribute(
+            'time-end',
+            _binding.formatTimeFromHoundreths(
+              fn(
+                translateXValue +
+                  timeSegment.offsetLeft +
+                  timeSegment.offsetWidth
+              )
+            )
+          );
         }
       }
 
       function _stopMoving() {
+        if (timeSegment.classList.contains('inMotion'));
+        timeSegment.classList.remove('inMotion');
+
         window.removeEventListener('mousemove', _startMoving);
       }
     }
@@ -382,7 +418,7 @@ export class TrackEditor extends LitElement {
         <input type="button" value="stop" @click=${this._handleTimeStop} />
       </div>
       <h1 id="timer">${this.timer}</h1>
-      <h2>${this.formatTime(this.actualTime)}</h2>
+      <h2>${this.formatTimeFromHoundreths(this.actualTime)}</h2>
       <div>
         <input
           type="range"

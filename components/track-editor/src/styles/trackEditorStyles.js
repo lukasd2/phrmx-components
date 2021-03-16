@@ -113,6 +113,45 @@ export const trackEditorStyles = css`
     flex-grow: 0;
     flex-shrink: 0;
   }
+
+  .time-segment::before {
+    display: none;
+    content: attr(time-start);
+    top: -10px;
+    position: absolute;
+    left: -20px;
+    pointer-events: none;
+    background: #292f33;
+    font-size: 11px;
+    color: #fff;
+    padding: 5px;
+    width: 50px;
+    text-align: center;
+  }
+
+  .time-segment::after {
+    display: none;
+    content: attr(time-end);
+    top: -10px;
+    position: absolute;
+    right: -20px;
+    pointer-events: none;
+    background: #292f33;
+    font-size: 11px;
+    color: #fff;
+    padding: 5px;
+    width: 50px;
+    text-align: center;
+  }
+
+  .time-segment.inMotion::before {
+    display: block;
+  }
+
+  .time-segment.inMotion::after {
+    display: block;
+  }
+
   .time-segment.segment-active {
     cursor: move;
   }
