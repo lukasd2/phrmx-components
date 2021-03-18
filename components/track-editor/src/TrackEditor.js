@@ -5,7 +5,6 @@ import { trackEditorStyles } from './styles/trackEditorStyles.js';
 export class TrackEditor extends LitElement {
   static get properties() {
     return {
-      startTime: { type: Number },
       dragEnd: { type: Boolean },
       timer: { type: Number },
       trackElements: { type: Array },
@@ -28,7 +27,6 @@ export class TrackEditor extends LitElement {
     this.marker;
     this.zoomFactor = 100;
     this.timeSegmentWidth = 500;
-    this.startTime = 0;
     this.dragEnd = true;
     this.timer = 0;
     this.actualTime = 0;
@@ -41,16 +39,11 @@ export class TrackEditor extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     console.debug('DEBUG: TrackEditor successfuly added to the DOM');
+
     window.addEventListener('mouseup', () => {
       this.shadowRoot.removeEventListener(
         'mousemove',
         this._updateMarkerPosition
-      );
-    });
-    window.addEventListener('mouseup', () => {
-      this.shadowRoot.removeEventListener(
-        'mousemove',
-        this._startTimeSegmentResize
       );
     });
   }
@@ -106,8 +99,6 @@ export class TrackEditor extends LitElement {
       .forEach(elem => elem.classList.remove('dragging'));
   }
 
-  // FIXME end.
-
   _onDragEnterHandler(ev) {
     ev.preventDefault();
     if (
@@ -116,8 +107,11 @@ export class TrackEditor extends LitElement {
     ) {
       ev.target.classList.add('hoverWithDrag');
     }
-    if (ev.target.className === 'time-segment') {
-      ev.target.classList.add('hoverWithDrag');
+    if (
+      ev.target.className === 'time-segment' ||
+      ev.target.className === 'video-row'
+    ) {
+      ev.currentTarget.classList.add('hoverWithDrag');
     }
   }
 
@@ -135,40 +129,23 @@ export class TrackEditor extends LitElement {
 
   _onDropMediaHandler(ev) {
     ev.preventDefault();
-    this.removeDraggingEffectsFromElements();
-    ev.target.classList.remove('hoverWithDrag');
+    this._updateDragEnd();
 
+    ev.currentTarget.classList.remove('hoverWithDrag');
+    console.warn(ev.currentTarget);
     const data = ev.dataTransfer.getData('text/plain');
-    const dataSrc = ev.dataTransfer.getData('text/uri-list');
+    const dataThumbnailSrc = ev.dataTransfer.getData('text/uri-list');
 
-    const dataFromDrag = this.extractDataFromDraggedElement(data);
+    const dataFromDraggedRes = this.extractDataFromDraggedElement(data);
 
-    const timeSegment = this.createTimeSegment();
-    const rowSegment = this.createRowSegment(dataFromDrag, dataSrc);
+    const timeSegment = this.createDOMTimeSegment(
+      dataFromDraggedRes,
+      dataThumbnailSrc
+    );
 
-    //const resizer = document.createElement('div');
-    const resizerRight = document.createElement('div');
-    resizerRight.classList.add('resizerRight');
-    const resizerLeft = document.createElement('div');
-    resizerLeft.classList.add('resizerLeft');
-    //rowSegment.appendChild(resizerRight);
-    //rowSegment.appendChild(resizerLeft);
-
-    //resizer.classList.add('resizer');
-
-    timeSegment.appendChild(rowSegment);
-    timeSegment.appendChild(resizerLeft);
-    timeSegment.appendChild(resizerRight);
-
-    ev.target.appendChild(timeSegment);
+    ev.currentTarget.appendChild(timeSegment);
 
     this.trackElements.push(timeSegment);
-  }
-
-  removeDraggingEffectsFromElements() {
-    this.shadowRoot
-      .querySelectorAll('.draggable-media')
-      .forEach(column => column.classList.remove('dragging'));
   }
 
   extractDataFromDraggedElement(data) {
@@ -176,24 +153,38 @@ export class TrackEditor extends LitElement {
     return obj;
   }
 
-  createTimeSegment() {
-    const newElement = document.createElement('div');
-    newElement.classList.add('time-segment');
-    newElement.setAttribute('time-start', this.timeStart);
-    newElement.setAttribute('time-end', this.timeEnd);
-    //newElement.setAttribute('duration', this.timeSegmentWidth);
-    newElement.setAttribute('draggable', true);
-    this.timeStart = this.timeStart + 5;
-    this.timeEnd = this.timeEnd + 5;
-    return newElement;
-  }
+  createDOMTimeSegment(data, thumbnailSrc) {
+    const newTimeSegment = document.createElement('div');
+    newTimeSegment.classList.add('time-segment');
 
-  createRowSegment(data, thumnbailSrc) {
-    const rowElement = document.createElement('div');
+    const dataType = data.type;
+    if (dataType === 'image') {
+      newTimeSegment.setAttribute('duration', this.timeSegmentWidth);
+    }
 
     for (const [key, value] of Object.entries(data)) {
-      rowElement.setAttribute(`${key}`, `${value}`);
+      newTimeSegment.setAttribute(`${key}`, `${value}`);
     }
+
+    newTimeSegment.setAttribute('time-start', this.timeStart);
+    newTimeSegment.setAttribute('time-end', this.timeEnd);
+    newTimeSegment.setAttribute('draggable', true);
+
+    this.timeStart = this.timeStart + 5;
+    this.timeEnd = this.timeEnd + 5;
+
+    const rowSegment = this.createRowSegment(thumbnailSrc);
+    const { resizerLeft, resizerRight } = this.createResizersOnSegment();
+
+    newTimeSegment.appendChild(rowSegment);
+    newTimeSegment.appendChild(resizerLeft);
+    newTimeSegment.appendChild(resizerRight);
+
+    return newTimeSegment;
+  }
+
+  createRowSegment(thumnbailSrc) {
+    const rowElement = document.createElement('div');
 
     rowElement.classList.add('video-row');
     rowElement.style.background = `url(${thumnbailSrc}) repeat space`;
@@ -203,13 +194,28 @@ export class TrackEditor extends LitElement {
     return rowElement;
   }
 
+  createResizersOnSegment() {
+    const resizerRight = document.createElement('div');
+    resizerRight.classList.add('resizerRight');
+    const resizerLeft = document.createElement('div');
+    resizerLeft.classList.add('resizerLeft');
+    return { resizerLeft, resizerRight };
+  }
+
   secondsCounter = () => {
     //https://stackoverflow.com/questions/26329900/how-do-i-display-millisecond-in-my-stopwatch
     let timeBegan = null;
-    let started = null;
+    let timeStopped = null;
+    let stoppedDuration = 0;
 
     if (timeBegan === null) {
       timeBegan = new Date();
+    } else {
+      clearInterval(this.interval);
+    }
+
+    if (timeStopped !== null) {
+      stoppedDuration += new Date() - timeStopped;
     }
 
     const clockRunning = () => {
@@ -223,6 +229,14 @@ export class TrackEditor extends LitElement {
     this.interval = setInterval(clockRunning, 10);
   };
 
+  generateScaleFunction(prevMin, prevMax, newMin, newMax) {
+    var offset = newMin - prevMin,
+      scale = (newMax - newMin) / (prevMax - prevMin);
+    return function (x) {
+      return (offset + scale * x).toFixed(2);
+    };
+  }
+
   _updateMarkerPosition = ev => {
     // TODO: hardcoded width of tracks info element on the left side
     const startX = this.timelineContainer.getBoundingClientRect().left - 50;
@@ -235,14 +249,6 @@ export class TrackEditor extends LitElement {
       this.actualTime = fn(traslateValue);
     }
   };
-
-  generateScaleFunction(prevMin, prevMax, newMin, newMax) {
-    var offset = newMin - prevMin,
-      scale = (newMax - newMin) / (prevMax - prevMin);
-    return function (x) {
-      return (offset + scale * x).toFixed(2);
-    };
-  }
 
   _updateMarkerPosition2 = () => {
     const startX = this.timelineContainer.getBoundingClientRect().left - 50;
@@ -277,7 +283,14 @@ export class TrackEditor extends LitElement {
   }
 
   _handleTimeStop(ev) {
+    // TODO: to be implemented
     console.debug('_handleTimeStop');
+    clearInterval(this.interval);
+  }
+
+  _handleTimeReset(ev) {
+    // TODO: to be implemented
+    console.debug('_handleTimeReset');
     clearInterval(this.interval);
   }
 
@@ -287,23 +300,22 @@ export class TrackEditor extends LitElement {
   }
 
   _handleFocus(ev) {
-    console.debug('_handleTimeSegmentResize', ev);
+    console.debug('_handleFocusClick on time segment', ev);
 
-    console.debug('_handleTimeSegmentResize', ev.target);
+    /*  console.debug('_handleTimeSegmentResize', ev.target);
     if (ev.target.className === 'video-row') {
       const row = ev.target;
       row.style.border = '1px solid red';
-    }
+    } */
   }
 
   _handleTimeSegmentResize = ev => {
     ev.preventDefault();
-
-    const _binding = this;
-
+    const RESIZER_LEFT = 'resizerLeft';
+    const RESIZER_RIGHT = 'resizerRight';
     if (
-      ev.target.className === 'resizerLeft' ||
-      ev.target.className === 'resizerRight'
+      ev.target.className === RESIZER_LEFT ||
+      ev.target.className === RESIZER_RIGHT
     ) {
       const timeSegment = ev.target.parentNode;
       const minimumSize = 10;
@@ -314,65 +326,107 @@ export class TrackEditor extends LitElement {
           .replace('px', '')
       );
 
-      let original_mouse_x = ev.pageX;
+      let original_x = timeSegment.getBoundingClientRect().left + 50;
+      let width;
+      let original_mouse_pos = ev.pageX;
+      let enlarge;
+      if (ev.target.className === RESIZER_LEFT) {
+        enlarge = false;
+      } else if (ev.target.className === RESIZER_RIGHT) {
+        enlarge = true;
+      }
 
-      window.addEventListener('mousemove', _startTimeSegmentResize);
-      window.addEventListener('mouseup', _stopResize);
-      timeSegment.addEventListener('mouseup', this._stopTimeSegmentResize);
-      timeSegment.addEventListener('mouseout', this._stopTimeSegmentResize);
+      if (!timeSegment.classList.contains('inMotion')) {
+        timeSegment.classList.add('inMotion');
+      }
 
-      function _startTimeSegmentResize(ev) {
-        const width = original_width + (ev.pageX - original_mouse_x);
+      const _startTimeSegmentResize = ev => {
+        let scale = this.generateScaleFunction(
+          0,
+          this.timeSegmentWidth,
+          0,
+          500
+        );
+        const startX = timeSegment.getAttribute('datax');
 
-        if (width > minimumSize) {
-          const startX = timeSegment.offsetLeft;
-          console.warn('startX', startX);
-          //timeSegment.style.setProperty('--default-lenght', width + 'px');
-          timeSegment.style.width = width + 'px';
-          timeSegment.setAttribute('time-start', this.timeStart);
-          timeSegment.setAttribute('duration', width);
-          timeSegment.setAttribute('time-end', this.timeEnd);
+        if (!enlarge) {
+          width = original_width - (ev.pageX - original_mouse_pos);
+        } else {
+          width = original_width + (ev.pageX - original_mouse_pos);
         }
-      }
+        if (width > minimumSize) {
+          //timeSegment.style.setProperty('--default-lenght', width + 'px');
 
-      function _stopResize() {
-        window.removeEventListener('mousemove', _startTimeSegmentResize);
-      }
+          timeSegment.style.width = width + 'px';
+          if (!enlarge && startX >= 0) {
+            timeSegment.style.left = ev.pageX - original_mouse_pos + 'px';
+            /*     let translateXValue = original_x + (ev.pageX - original_mouse_pos);
+            console.warn(translateXValue);
+            timeSegment.style.transform = `translateX(${translateXValue}px)`; */
+            let test = Number(startX) + Number(ev.pageX - original_mouse_pos);
+            timeSegment.setAttribute(
+              'time-start',
+              this.formatTimeFromHoundreths(scale(test))
+            );
+            //timeSegment.setAttribute('datax', ev.pageX - 50);
+          } else {
+            /* timeSegment.setAttribute(
+            'time-start',
+            this.formatTimeFromHoundreths(
+              fn(timeSegment.offsetLeft + translateXValue)
+            )
+          ); */
+            let test = Number(width) + Number(startX);
+
+            timeSegment.setAttribute(
+              'time-end',
+              this.formatTimeFromHoundreths(scale(test))
+            );
+            timeSegment.setAttribute('duration', Number(width));
+          }
+        }
+      };
+
+      const _stopResize = () => {
+        if (timeSegment.classList.contains('inMotion'));
+        timeSegment.classList.remove('inMotion');
+
+        this.shadowRoot.removeEventListener(
+          'mousemove',
+          _startTimeSegmentResize
+        );
+      };
+
+      this.shadowRoot.addEventListener('mousemove', _startTimeSegmentResize);
+      this.shadowRoot.addEventListener('mouseup', _stopResize);
     } else if (ev.target.className === 'video-row') {
       const track = this.trackEditor;
 
       const timeSegment = ev.target.parentNode;
-      if (timeSegment.classList.contains('inMotion'));
-      timeSegment.classList.add('inMotion');
+      if (!timeSegment.classList.contains('inMotion')) {
+        timeSegment.classList.add('inMotion');
+      }
 
-      window.addEventListener('mousemove', _startMoving);
-      window.addEventListener('mouseup', _stopMoving);
-
-      function _startMoving(ev) {
+      const _startMoving = ev => {
         const startX =
           timeSegment.offsetLeft + 50 + timeSegment.offsetWidth / 2;
 
         const mouseX = ev.pageX;
         const translateXValue = mouseX - startX + track.scrollLeft;
         if (translateXValue >= 0) {
-          let fn = _binding.generateScaleFunction(
-            0,
-            _binding.timeSegmentWidth,
-            0,
-            500
-          );
+          let fn = this.generateScaleFunction(0, this.timeSegmentWidth, 0, 500);
 
           timeSegment.style.transform = 'translateX(' + translateXValue + 'px)';
           timeSegment.setAttribute('datax', translateXValue);
           timeSegment.setAttribute(
             'time-start',
-            _binding.formatTimeFromHoundreths(
+            this.formatTimeFromHoundreths(
               fn(timeSegment.offsetLeft + translateXValue)
             )
           );
           timeSegment.setAttribute(
             'time-end',
-            _binding.formatTimeFromHoundreths(
+            this.formatTimeFromHoundreths(
               fn(
                 translateXValue +
                   timeSegment.offsetLeft +
@@ -381,14 +435,17 @@ export class TrackEditor extends LitElement {
             )
           );
         }
-      }
+      };
 
-      function _stopMoving() {
+      const _stopMoving = () => {
         if (timeSegment.classList.contains('inMotion'));
         timeSegment.classList.remove('inMotion');
 
-        window.removeEventListener('mousemove', _startMoving);
-      }
+        this.shadowRoot.removeEventListener('mousemove', _startMoving);
+      };
+
+      this.shadowRoot.addEventListener('mousemove', _startMoving);
+      this.shadowRoot.addEventListener('mouseup', _stopMoving);
     }
   };
 
@@ -399,10 +456,12 @@ export class TrackEditor extends LitElement {
     thumnbailElement.classList.add('dragging');
 
     const itemData = {
-      segmenttype: thumnbailElement.dataset.segmenttype,
+      type: thumnbailElement.dataset.type,
       segmentname: thumnbailElement.dataset.segmentname,
-      start: thumnbailElement.dataset.start,
-      end: thumnbailElement.dataset.end,
+      clipStart: thumnbailElement.dataset.clipStart,
+      clipEnd: thumnbailElement.dataset.clipEnd,
+      duration: thumnbailElement.dataset.duration,
+      reference: thumnbailElement.dataset.reference,
     };
 
     ev.dataTransfer.effectAllowed = 'copy';
@@ -416,6 +475,7 @@ export class TrackEditor extends LitElement {
       <div class="timer-controls">
         <input type="button" value="play" @click=${this._handleTimePlay} />
         <input type="button" value="stop" @click=${this._handleTimeStop} />
+        <input type="button" value="reset" @click=${this._handleTimeReset} />
       </div>
       <h1 id="timer">${this.timer}</h1>
       <h2>${this.formatTimeFromHoundreths(this.actualTime)}</h2>
@@ -484,9 +544,42 @@ export class TrackEditor extends LitElement {
           alt="example img"
           @dragstart=${this._dragStartItemHandler}
           data-segmentname="filmname"
-          data-segmenttype="mp4"
-          data-start="00.01"
-          data-end="00.50"
+          data-reference="id1"
+          data-type="image"
+          tabindex="0"
+        />
+      </div>
+
+      <div style="margin-top: 50px;">
+        <img
+          class="draggable-media"
+          src="https://picsum.photos/id/555/150/200"
+          draggable="true"
+          alt="example img"
+          @dragstart=${this._dragStartItemHandler}
+          data-segmentname="filmname"
+          data-reference="id2"
+          data-type="video"
+          data-clipStart="00.01"
+          data-clipEnd="00.50"
+          data-duration="1000"
+          tabindex="0"
+        />
+      </div>
+
+      <div style="margin-top: 50px;">
+        <img
+          class="draggable-media"
+          src="https://picsum.photos/id/444/150/200"
+          draggable="true"
+          alt="example img"
+          @dragstart=${this._dragStartItemHandler}
+          data-segmentname="filmname"
+          data-reference="id3"
+          data-type="music"
+          data-clipStart="00.01"
+          data-clipEnd="00.50"
+          data-duration="1500"
           tabindex="0"
         />
       </div>
