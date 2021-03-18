@@ -7,12 +7,11 @@ export class TrackEditor extends LitElement {
     return {
       dragEnd: { type: Boolean },
       timer: { type: Number },
-      trackElements: { type: Array },
+      allTracksElements: { type: Array },
+      trackElements: { type: Object },
       actualTime: { type: Number },
       timeSegmentWidth: { type: Number },
       zoomFactor: { type: Number },
-      timeEnd: { type: Number },
-      timeStart: { type: Number },
     };
   }
 
@@ -31,9 +30,8 @@ export class TrackEditor extends LitElement {
     this.timer = 0;
     this.actualTime = 0;
     this.interval;
-    this.trackElements = [];
-    this.timeStart = 0.01;
-    this.timeEnd = 5.0;
+    this.allTracksElements = [];
+    this.trackElements = {};
   }
 
   connectedCallback() {
@@ -56,7 +54,14 @@ export class TrackEditor extends LitElement {
     );
     this.marker = this.shadowRoot.getElementById('marker');
 
-    this.createdTracks.forEach(track => {});
+    this.createdTracks.forEach(track => {
+      this.trackElements[track.id] = {
+        timeStart: 0,
+        timeEnd: 0,
+        elements: [],
+      };
+    });
+    console.warn(this.trackElements);
   }
 
   updated(changedProperties) {
@@ -78,7 +83,7 @@ export class TrackEditor extends LitElement {
       this.timeSegmentWidth + 'px'
     );
 
-    this.trackElements.forEach(segment => {
+    this.allTracksElements.forEach(segment => {
       // problem cannot reassing attribute in this loop. Also it is complex to getComputedStyle of translateX
       const transformValue = segment.getAttribute('datax');
       const duration = segment.getAttribute('duration');
@@ -132,7 +137,9 @@ export class TrackEditor extends LitElement {
     this._updateDragEnd();
 
     ev.currentTarget.classList.remove('hoverWithDrag');
-    console.warn(ev.currentTarget);
+
+    const trackObject = this.trackElements[ev.currentTarget.id];
+
     const data = ev.dataTransfer.getData('text/plain');
     const dataThumbnailSrc = ev.dataTransfer.getData('text/uri-list');
 
@@ -143,9 +150,36 @@ export class TrackEditor extends LitElement {
       dataThumbnailSrc
     );
 
-    ev.currentTarget.appendChild(timeSegment);
+    const duration = timeSegment.getAttribute('duration');
 
-    this.trackElements.push(timeSegment);
+    if (trackObject.elements.length === 0) {
+      trackObject.timeStart = Number(trackObject.timeEnd);
+      trackObject.timeEnd = Number(duration);
+      timeSegment.setAttribute(
+        'time-start',
+        this.formatTimeFromHoundreths(trackObject.timeStart)
+      );
+      timeSegment.setAttribute(
+        'time-end',
+        this.formatTimeFromHoundreths(trackObject.timeEnd)
+      );
+    } else {
+      trackObject.timeStart = Number(trackObject.timeEnd) + 1;
+      trackObject.timeEnd += Number(duration);
+      timeSegment.setAttribute(
+        'time-start',
+        this.formatTimeFromHoundreths(trackObject.timeStart)
+      );
+      timeSegment.setAttribute(
+        'time-end',
+        this.formatTimeFromHoundreths(trackObject.timeEnd)
+      );
+    }
+    timeSegment.style.width = duration + 'px';
+
+    ev.currentTarget.appendChild(timeSegment);
+    this.allTracksElements.push(timeSegment);
+    this.trackElements[ev.currentTarget.id].elements.push(timeSegment);
   }
 
   extractDataFromDraggedElement(data) {
@@ -165,13 +199,6 @@ export class TrackEditor extends LitElement {
     for (const [key, value] of Object.entries(data)) {
       newTimeSegment.setAttribute(`${key}`, `${value}`);
     }
-
-    newTimeSegment.setAttribute('time-start', this.timeStart);
-    newTimeSegment.setAttribute('time-end', this.timeEnd);
-    newTimeSegment.setAttribute('draggable', true);
-
-    this.timeStart = this.timeStart + 5;
-    this.timeEnd = this.timeEnd + 5;
 
     const rowSegment = this.createRowSegment(thumbnailSrc);
     const { resizerLeft, resizerRight } = this.createResizersOnSegment();
@@ -510,6 +537,7 @@ export class TrackEditor extends LitElement {
             ></div>
             <div
               class="track-element video-track"
+              id="videoTrack1"
               @dragover="${this._onDragOverMediaHandler}"
               @dragenter="${this._onDragEnterHandler}"
               @dragleave="${this._onDragLeaveHandler}"
@@ -518,6 +546,7 @@ export class TrackEditor extends LitElement {
             ></div>
             <div
               class="track-element video-track"
+              id="videoTrack2"
               @dragover="${this._onDragOverMediaHandler}"
               @dragenter="${this._onDragEnterHandler}"
               @dragleave="${this._onDragLeaveHandler}"
@@ -526,6 +555,7 @@ export class TrackEditor extends LitElement {
             ></div>
             <div
               class="track-element music-track"
+              id="musicTrack1"
               @dragover="${this._onDragOverMediaHandler}"
               @dragenter="${this._onDragEnterHandler}"
               @dragleave="${this._onDragLeaveHandler}"
@@ -536,52 +566,54 @@ export class TrackEditor extends LitElement {
         </div>
       </section>
 
-      <div style="margin-top: 50px;">
-        <img
-          class="draggable-media"
-          src="https://picsum.photos/id/999/150/200"
-          draggable="true"
-          alt="example img"
-          @dragstart=${this._dragStartItemHandler}
-          data-segmentname="filmname"
-          data-reference="id1"
-          data-type="image"
-          tabindex="0"
-        />
-      </div>
+      <div style="margin-top: 50px; display:flex; flex-direction: row;">
+        <div>
+          <img
+            class="draggable-media"
+            src="https://picsum.photos/id/999/150/200"
+            draggable="true"
+            alt="example img"
+            @dragstart=${this._dragStartItemHandler}
+            data-segmentname="filmname"
+            data-reference="id1"
+            data-type="image"
+            tabindex="0"
+          />
+        </div>
 
-      <div style="margin-top: 50px;">
-        <img
-          class="draggable-media"
-          src="https://picsum.photos/id/555/150/200"
-          draggable="true"
-          alt="example img"
-          @dragstart=${this._dragStartItemHandler}
-          data-segmentname="filmname"
-          data-reference="id2"
-          data-type="video"
-          data-clipStart="00.01"
-          data-clipEnd="00.50"
-          data-duration="1000"
-          tabindex="0"
-        />
-      </div>
+        <div>
+          <img
+            class="draggable-media"
+            src="https://picsum.photos/id/555/150/200"
+            draggable="true"
+            alt="example img"
+            @dragstart=${this._dragStartItemHandler}
+            data-segmentname="filmname"
+            data-reference="id2"
+            data-type="video"
+            data-clipStart="00.01"
+            data-clipEnd="00.50"
+            data-duration="1000"
+            tabindex="0"
+          />
+        </div>
 
-      <div style="margin-top: 50px;">
-        <img
-          class="draggable-media"
-          src="https://picsum.photos/id/444/150/200"
-          draggable="true"
-          alt="example img"
-          @dragstart=${this._dragStartItemHandler}
-          data-segmentname="filmname"
-          data-reference="id3"
-          data-type="music"
-          data-clipStart="00.01"
-          data-clipEnd="00.50"
-          data-duration="1500"
-          tabindex="0"
-        />
+        <div>
+          <img
+            class="draggable-media"
+            src="https://picsum.photos/id/444/150/200"
+            draggable="true"
+            alt="example img"
+            @dragstart=${this._dragStartItemHandler}
+            data-segmentname="filmname"
+            data-reference="id3"
+            data-type="music"
+            data-clipStart="00.01"
+            data-clipEnd="00.50"
+            data-duration="1500"
+            tabindex="0"
+          />
+        </div>
       </div>
     `;
   }
