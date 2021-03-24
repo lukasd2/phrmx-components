@@ -12,6 +12,7 @@ export class TrackEditor extends LitElement {
       actualTime: { type: Number },
       timeSegmentWidth: { type: Number },
       zoomFactor: { type: Number },
+      numberOfTrackElements: { type: Number },
     };
   }
 
@@ -30,6 +31,7 @@ export class TrackEditor extends LitElement {
     this.timer = 0;
     this.actualTime = 0;
     this.interval;
+    this.numberOfTrackElements = 0;
     this.allTracksElements = [];
     this.trackElements = {};
   }
@@ -61,7 +63,6 @@ export class TrackEditor extends LitElement {
         elements: [],
       };
     });
-    console.warn(this.trackElements);
   }
 
   updated(changedProperties) {
@@ -137,8 +138,9 @@ export class TrackEditor extends LitElement {
     this._updateDragEnd();
 
     ev.currentTarget.classList.remove('hoverWithDrag');
+    const currentTrackId = ev.currentTarget.id;
 
-    const trackObject = this.trackElements[ev.currentTarget.id];
+    const trackObject = this.trackElements[currentTrackId];
 
     const data = ev.dataTransfer.getData('text/plain');
     const dataThumbnailSrc = ev.dataTransfer.getData('text/uri-list');
@@ -175,11 +177,17 @@ export class TrackEditor extends LitElement {
         this.formatTimeFromHoundreths(trackObject.timeEnd)
       );
     }
-    timeSegment.style.width = duration + 'px';
+    const segmentWidth = duration * (this.zoomFactor / 100);
+    timeSegment.style.width = segmentWidth + 'px';
+
+    timeSegment.setAttribute('trackRef', currentTrackId);
 
     ev.currentTarget.appendChild(timeSegment);
+    this.incrementNumberOfTrackElements();
     this.allTracksElements.push(timeSegment);
-    this.trackElements[ev.currentTarget.id].elements.push(timeSegment);
+
+    const trackElement = this.createObjectForPreviewRequest(timeSegment);
+    this.trackElements[currentTrackId].elements.push(trackElement);
   }
 
   extractDataFromDraggedElement(data) {
@@ -229,6 +237,28 @@ export class TrackEditor extends LitElement {
     return { resizerLeft, resizerRight };
   }
 
+  createObjectForPreviewRequest(DOMtimeSegment) {
+    const localRef = `${DOMtimeSegment.getAttribute('type')}${
+      this.numberOfTrackElements
+    }`;
+    DOMtimeSegment.setAttribute('localRef', localRef);
+
+    const trackElement = {
+      localRef: DOMtimeSegment.getAttribute('localRef'),
+      trackRef: DOMtimeSegment.getAttribute('trackRef'),
+      mediaType: DOMtimeSegment.getAttribute('type'),
+      identificator: DOMtimeSegment.getAttribute('reference'),
+      timeStart: DOMtimeSegment.getAttribute('time-start'),
+      timeEnd: DOMtimeSegment.getAttribute('time-end'),
+    };
+
+    return trackElement;
+  }
+
+  incrementNumberOfTrackElements() {
+    this.numberOfTrackElements = this.numberOfTrackElements + 1;
+  }
+
   secondsCounter = () => {
     //https://stackoverflow.com/questions/26329900/how-do-i-display-millisecond-in-my-stopwatch
     let timeBegan = null;
@@ -248,7 +278,7 @@ export class TrackEditor extends LitElement {
     const clockRunning = () => {
       let currentTime = new Date();
       let timeElapsed = new Date(currentTime - timeBegan);
-      this._updateMarkerPosition2();
+      this.synchroniseMarkerToTime();
 
       this.actualTime = timeElapsed / 10;
     };
@@ -260,7 +290,7 @@ export class TrackEditor extends LitElement {
     var offset = newMin - prevMin,
       scale = (newMax - newMin) / (prevMax - prevMin);
     return function (x) {
-      return (offset + scale * x).toFixed(2);
+      return Number(offset + scale * x).toFixed(2);
     };
   }
 
@@ -272,12 +302,12 @@ export class TrackEditor extends LitElement {
     if (traslateValue >= 0) {
       this.marker.style.transform = `translateX(${traslateValue}px)`;
       let fn = this.generateScaleFunction(0, this.timeSegmentWidth, 0, 500);
-      console.log(fn(traslateValue));
       this.actualTime = fn(traslateValue);
     }
   };
 
-  _updateMarkerPosition2 = () => {
+  synchroniseMarkerToTime = () => {
+    // TODO: hardcoded width of tracks info element on the left side
     const startX = this.timelineContainer.getBoundingClientRect().left - 50;
 
     const mouseX = this.actualTime;
@@ -306,7 +336,19 @@ export class TrackEditor extends LitElement {
 
   _handleTimePlay(ev) {
     console.debug('_handleTimePlay');
+    this.dispatchEventForPreview();
     this.secondsCounter();
+  }
+
+  dispatchEventForPreview() {
+    const event = new CustomEvent('track-elements', {
+      detail: {
+        trackElements: this.trackElements,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   _handleTimeStop(ev) {
@@ -318,6 +360,8 @@ export class TrackEditor extends LitElement {
   _handleTimeReset(ev) {
     // TODO: to be implemented
     console.debug('_handleTimeReset');
+    this.dispatchEventForPreview();
+
     clearInterval(this.interval);
   }
 
@@ -345,22 +389,23 @@ export class TrackEditor extends LitElement {
       ev.target.className === RESIZER_RIGHT
     ) {
       const timeSegment = ev.target.parentNode;
-      const minimumSize = 10;
+      const minimumSize = 50;
 
       let original_width = parseFloat(
         getComputedStyle(timeSegment, null)
           .getPropertyValue('width')
           .replace('px', '')
       );
+      const track = this.trackEditor;
 
-      let original_x = timeSegment.getBoundingClientRect().left + 50;
       let width;
       let original_mouse_pos = ev.pageX;
-      let enlarge;
+      let resizeLeft = false;
+      let resizeRight = false;
       if (ev.target.className === RESIZER_LEFT) {
-        enlarge = false;
+        resizeLeft = true;
       } else if (ev.target.className === RESIZER_RIGHT) {
-        enlarge = true;
+        resizeRight = true;
       }
 
       if (!timeSegment.classList.contains('inMotion')) {
@@ -374,42 +419,54 @@ export class TrackEditor extends LitElement {
           0,
           500
         );
-        const startX = timeSegment.getAttribute('datax');
 
-        if (!enlarge) {
+        if (resizeLeft) {
+          const startX = timeSegment.offsetLeft + 50;
+          const mouseX = ev.pageX;
+
           width = original_width - (ev.pageX - original_mouse_pos);
-        } else {
+        } else if (resizeRight) {
           width = original_width + (ev.pageX - original_mouse_pos);
         }
+        // Make resize with left or right resizer element
         if (width > minimumSize) {
-          //timeSegment.style.setProperty('--default-lenght', width + 'px');
-
           timeSegment.style.width = width + 'px';
-          if (!enlarge && startX >= 0) {
-            timeSegment.style.left = ev.pageX - original_mouse_pos + 'px';
-            /*     let translateXValue = original_x + (ev.pageX - original_mouse_pos);
-            console.warn(translateXValue);
-            timeSegment.style.transform = `translateX(${translateXValue}px)`; */
-            let test = Number(startX) + Number(ev.pageX - original_mouse_pos);
-            timeSegment.setAttribute(
-              'time-start',
-              this.formatTimeFromHoundreths(scale(test))
-            );
-            //timeSegment.setAttribute('datax', ev.pageX - 50);
-          } else {
-            /* timeSegment.setAttribute(
-            'time-start',
-            this.formatTimeFromHoundreths(
-              fn(timeSegment.offsetLeft + translateXValue)
-            )
-          ); */
-            let test = Number(width) + Number(startX);
 
+          if (resizeLeft) {
+            const startX = timeSegment.offsetLeft + 50;
+
+            const mouseX = ev.pageX;
+            const translateXValue = mouseX - startX + track.scrollLeft;
+            if (translateXValue >= 0) {
+              let fn = this.generateScaleFunction(
+                0,
+                this.timeSegmentWidth,
+                0,
+                500
+              );
+              console.warn('width', width);
+              timeSegment.style.transform =
+                'translateX(' + translateXValue + 'px)';
+              timeSegment.setAttribute('datax', translateXValue);
+              timeSegment.setAttribute(
+                'time-start',
+                this.formatTimeFromHoundreths(
+                  fn(timeSegment.offsetLeft + translateXValue)
+                )
+              );
+              let noDecimalsScaledWidth = scale(Number(width));
+              noDecimalsScaledWidth = Number(noDecimalsScaledWidth).toFixed(0);
+              timeSegment.setAttribute('duration', noDecimalsScaledWidth);
+            }
+          } else if (resizeRight) {
             timeSegment.setAttribute(
               'time-end',
-              this.formatTimeFromHoundreths(scale(test))
+              this.formatTimeFromHoundreths(scale(Number(width)))
             );
-            timeSegment.setAttribute('duration', Number(width));
+
+            let noDecimalsScaledWidth = scale(Number(width));
+            noDecimalsScaledWidth = Number(noDecimalsScaledWidth).toFixed(0);
+            timeSegment.setAttribute('duration', noDecimalsScaledWidth);
           }
         }
       };
@@ -435,6 +492,7 @@ export class TrackEditor extends LitElement {
       }
 
       const _startMoving = ev => {
+        console.warn('startMoving');
         const startX =
           timeSegment.offsetLeft + 50 + timeSegment.offsetWidth / 2;
 
@@ -465,16 +523,44 @@ export class TrackEditor extends LitElement {
       };
 
       const _stopMoving = () => {
+        console.warn('stopMoving');
+
+        this.updateTimeSegmentAttributes(timeSegment);
         if (timeSegment.classList.contains('inMotion'));
         timeSegment.classList.remove('inMotion');
 
         this.shadowRoot.removeEventListener('mousemove', _startMoving);
+        this.shadowRoot.removeEventListener('mouseup', _stopMoving);
       };
 
       this.shadowRoot.addEventListener('mousemove', _startMoving);
       this.shadowRoot.addEventListener('mouseup', _stopMoving);
     }
   };
+
+  updateTimeSegmentAttributes(timeSegment) {
+    const localRef = timeSegment.getAttribute('localref');
+    const trackId = timeSegment.getAttribute('trackRef');
+    const elementsList = this.trackElements[trackId].elements;
+
+    const datax = timeSegment.getAttribute('datax');
+    const duration = timeSegment.getAttribute('duration');
+
+    const isEqualToLocalReference = segment => segment.localRef === localRef;
+
+    const currentSegmentIndex = elementsList.findIndex(isEqualToLocalReference);
+
+    const timeStart = this.formatTimeFromHoundreths(datax);
+    const timeEnd = this.formatTimeFromHoundreths(
+      Number(datax) + Number(duration)
+    );
+
+    elementsList[currentSegmentIndex] = {
+      ...elementsList[currentSegmentIndex],
+      timeStart: timeStart,
+      timeEnd: timeEnd,
+    };
+  }
 
   // FIXME: for separate component test purposes only
   _dragStartItemHandler(ev) {
@@ -485,8 +571,8 @@ export class TrackEditor extends LitElement {
     const itemData = {
       type: thumnbailElement.dataset.type,
       segmentname: thumnbailElement.dataset.segmentname,
-      clipStart: thumnbailElement.dataset.clipStart,
-      clipEnd: thumnbailElement.dataset.clipEnd,
+      clipstart: thumnbailElement.dataset.clipstart,
+      clipend: thumnbailElement.dataset.clipend,
       duration: thumnbailElement.dataset.duration,
       reference: thumnbailElement.dataset.reference,
     };
@@ -566,6 +652,9 @@ export class TrackEditor extends LitElement {
         </div>
       </section>
 
+      <!-- prep custom menu trigger -->
+      <nav class="context-menu"></nav>
+
       <div style="margin-top: 50px; display:flex; flex-direction: row;">
         <div>
           <img
@@ -575,7 +664,7 @@ export class TrackEditor extends LitElement {
             alt="example img"
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
-            data-reference="id1"
+            data-reference="999"
             data-type="image"
             tabindex="0"
           />
@@ -589,10 +678,10 @@ export class TrackEditor extends LitElement {
             alt="example img"
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
-            data-reference="id2"
+            data-reference="555"
             data-type="video"
-            data-clipStart="00.01"
-            data-clipEnd="00.50"
+            data-clipstart="00.01"
+            data-clipend="00.50"
             data-duration="1000"
             tabindex="0"
           />
@@ -606,10 +695,10 @@ export class TrackEditor extends LitElement {
             alt="example img"
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
-            data-reference="id3"
+            data-reference="444"
             data-type="music"
-            data-clipStart="00.01"
-            data-clipEnd="00.50"
+            data-clipstart="00.01"
+            data-clipend="00.50"
             data-duration="1500"
             tabindex="0"
           />

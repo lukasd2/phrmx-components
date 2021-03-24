@@ -182,25 +182,34 @@ export const trackEditorStyles = css`
   .resizerLeft {
     position: absolute;
     user-select: none;
-    background: blue;
-    width: 25px;
+    background: rgba(255, 255, 255, 0.7);
+    width: 30px;
     height: 75%;
     top: 0px;
-    left: 10px;
+    left: 5px;
     cursor: w-resize;
     margin: auto;
     bottom: 0px;
   }
   .resizerRight {
     position: absolute;
-    background: red;
+    background: rgba(255, 255, 255, 0.7);
     user-select: none;
-    width: 25px;
+    width: 30px;
     height: 75%;
     top: 0px;
-    right: 10px;
+    right: 5px;
     cursor: w-resize;
     margin: auto;
     bottom: 0px;
+  }
+
+  .context-menu {
+    display: none;
+    position: absolute;
+    z-index: 999;
+  }
+  .context-menu--active {
+    display: block;
   }
 `;
