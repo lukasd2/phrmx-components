@@ -23,6 +23,8 @@ export class TrackEditor extends LitElement {
   constructor() {
     super();
     this.timelineContainer;
+    this.contextMenu;
+    this.contextMenuState = 0;
     this.trackEditor;
     this.marker;
     this.zoomFactor = 100;
@@ -48,12 +50,62 @@ export class TrackEditor extends LitElement {
     });
   }
 
+  toggleMenuOnff = activeClass => {
+    if (this.contextMenuState !== 0) {
+      this.contextMenuState = 0;
+      this.contextMenu.classList.remove(activeClass);
+    }
+  };
+
+  _manageContextMenu(ev) {
+    ev.preventDefault();
+
+    const activeClass = 'context-menu--active';
+
+    const toggleMenuOn = () => {
+      if (this.contextMenuState !== 1) {
+        this.contextMenuState = 1;
+        this.contextMenu.classList.add(activeClass);
+      }
+    };
+
+    const positionContextMenu = () => {
+      let positionX = 0;
+      let positionY = 0;
+
+      if (ev.pageX || ev.pageY) {
+        positionX = ev.pageX;
+        positionY = ev.pageY;
+      }
+      this.contextMenu.style.left = positionX + 'px';
+      this.contextMenu.style.top = positionY + 'px';
+      const localRef = ev.target.parentNode.getAttribute('localRef');
+      const trackRef = ev.target.parentNode.getAttribute('trackRef');
+      this.contextMenu.setAttribute('localRef', localRef);
+      this.contextMenu.setAttribute('trackRef', trackRef);
+    };
+
+    const RESIZER_LEFT = 'resizerLeft';
+    const RESIZER_RIGHT = 'resizerRight';
+    if (
+      ev.target.className === RESIZER_LEFT ||
+      ev.target.className === RESIZER_RIGHT ||
+      ev.target.className === 'video-row'
+    ) {
+      toggleMenuOn();
+      positionContextMenu();
+    } else {
+      this.toggleMenuOnff(activeClass);
+    }
+  }
+
   firstUpdated() {
     this.trackEditor = this.shadowRoot.querySelector('.track-editor');
     this.createdTracks = this.shadowRoot.querySelectorAll('.track-element');
     this.timelineContainer = this.shadowRoot.querySelector(
       '.timeline-container'
     );
+    this.contextMenu = this.shadowRoot.querySelector('.context-menu');
     this.marker = this.shadowRoot.getElementById('marker');
 
     this.createdTracks.forEach(track => {
@@ -63,6 +115,9 @@ export class TrackEditor extends LitElement {
         elements: [],
       };
     });
+    this.shadowRoot.addEventListener('contextmenu', ev =>
+      this._manageContextMenu(ev)
+    );
   }
 
   updated(changedProperties) {
@@ -562,6 +617,27 @@ export class TrackEditor extends LitElement {
     };
   }
 
+  _deleteTimeSegment(ev) {
+    ev.preventDefault();
+    const trackRef = ev.currentTarget.getAttribute('trackRef');
+    const localRef = ev.currentTarget.getAttribute('localRef');
+
+    const parent = this.shadowRoot.getElementById(trackRef);
+
+    const child = parent.querySelector(`[localRef=${localRef}]`);
+
+    parent.removeChild(child);
+    const activeClass = 'context-menu--active';
+    this.toggleMenuOnff(activeClass);
+
+    const elementsList = this.trackElements[trackRef].elements;
+
+    const isEqualToLocalReference = segment => segment.localRef === localRef;
+
+    const currentSegmentIndex = elementsList.findIndex(isEqualToLocalReference);
+    elementsList.splice(currentSegmentIndex, 1);
+  }
+
   // FIXME: for separate component test purposes only
   _dragStartItemHandler(ev) {
     this.dragEnd = false;
@@ -607,7 +683,6 @@ export class TrackEditor extends LitElement {
       <section class="tracks">
         <div class="tracks-info">
           <div class="track-type">video</div>
-          <div class="track-type">video</div>
           <div class="track-type">music</div>
         </div>
         <div
@@ -630,15 +705,7 @@ export class TrackEditor extends LitElement {
               @drop="${this._onDropMediaHandler}"
               @dragend=${this._onDragEnd}
             ></div>
-            <div
-              class="track-element video-track"
-              id="videoTrack2"
-              @dragover="${this._onDragOverMediaHandler}"
-              @dragenter="${this._onDragEnterHandler}"
-              @dragleave="${this._onDragLeaveHandler}"
-              @drop="${this._onDropMediaHandler}"
-              @dragend=${this._onDragEnd}
-            ></div>
+
             <div
               class="track-element music-track"
               id="musicTrack1"
@@ -652,8 +719,11 @@ export class TrackEditor extends LitElement {
         </div>
       </section>
 
-      <!-- prep custom menu trigger -->
-      <nav class="context-menu"></nav>
+      <nav class="context-menu" @click="${this._deleteTimeSegment}">
+        <ul>
+          <li class="context-option--delete">Delete</li>
+        </ul>
+      </nav>
 
       <div style="margin-top: 50px; display:flex; flex-direction: row;">
         <div>

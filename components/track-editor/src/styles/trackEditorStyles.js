@@ -208,8 +208,30 @@ export const trackEditorStyles = css`
     display: none;
     position: absolute;
     z-index: 999;
+    border: 1px solid gray;
+    border-radius: 5px;
+    background-color: #fff;
+    padding: 25px;
+    font-size: 1.2em;
+    font-weight: bold;
   }
   .context-menu--active {
     display: block;
+  }
+
+  .context-menu > ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .context-menu:hover {
+    background-color: tomato;
+    cursor: pointer;
+    color: #fff;
+  }
+
+  .context-option--delete {
+    width: 100%;
   }
 `;
