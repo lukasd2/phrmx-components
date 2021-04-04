@@ -1,3 +1,3 @@
-import { DemoApp } from './DemoApp.js';
+import { DemoApp } from './src/DemoApp.js';
 
 customElements.define('demo-app', DemoApp);
