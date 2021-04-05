@@ -6,7 +6,6 @@ export class TrackEditor extends LitElement {
   static get properties() {
     return {
       dragEnd: { type: Boolean },
-      timer: { type: Number },
       allTracksElements: { type: Array },
       trackElements: { type: Object },
       actualTime: { type: Number },
@@ -30,7 +29,6 @@ export class TrackEditor extends LitElement {
     this.zoomFactor = 100;
     this.timeSegmentWidth = 500;
     this.dragEnd = true;
-    this.timer = 0;
     this.actualTime = 0;
     this.interval;
     this.numberOfTrackElements = 0;
@@ -662,12 +660,34 @@ export class TrackEditor extends LitElement {
   render() {
     return html`
       <div class="timer-controls">
-        <input type="button" value="play" @click=${this._handleTimePlay} />
-        <input type="button" value="stop" @click=${this._handleTimeStop} />
-        <input type="button" value="reset" @click=${this._handleTimeReset} />
+        <sl-tooltip content="Riproduci">
+          <sl-icon-button
+            class="timer-button timer__play"
+            name="play-circle"
+            label="Riproduci"
+            @click=${this._handleTimePlay}
+          ></sl-icon-button>
+        </sl-tooltip>
+        <sl-tooltip content="Metti in pausa">
+          <sl-icon-button
+            class="timer-button timer__pause"
+            name="pause-circle"
+            label="Metti in pausa"
+            @click=${this._handleTimeStop}
+          ></sl-icon-button>
+        </sl-tooltip>
+        <div class="timer-container">
+          <span>${this.formatTimeFromHoundreths(this.actualTime)}</span>
+        </div>
+        <sl-tooltip content="Riproduci dall'inzio">
+          <sl-icon-button
+            class="timer-button timer__restart"
+            name="arrow-repeat"
+            label="Riproduci dall'inzio"
+            @click=${this._handleTimeStop}
+          ></sl-icon-button>
+        </sl-tooltip>
       </div>
-      <h1 id="timer">${this.timer}</h1>
-      <h2>${this.formatTimeFromHoundreths(this.actualTime)}</h2>
       <div>
         <input
           type="range"
@@ -682,8 +702,16 @@ export class TrackEditor extends LitElement {
       </div>
       <section class="tracks">
         <div class="tracks-info">
-          <div class="track-type">video</div>
-          <div class="track-type">music</div>
+          <div class="track-type">
+            <sl-icon class="" name="camera-reels" label="video track"></sl-icon>
+          </div>
+          <div class="track-type">
+            <sl-icon
+              class=""
+              name="music-note-list"
+              label="video track"
+            ></sl-icon>
+          </div>
         </div>
         <div
           class="track-editor"
@@ -767,6 +795,22 @@ export class TrackEditor extends LitElement {
             data-segmentname="filmname"
             data-reference="444"
             data-type="music"
+            data-clipstart="00.01"
+            data-clipend="00.50"
+            data-duration="1500"
+            tabindex="0"
+          />
+        </div>
+        <div>
+          <img
+            class="draggable-media"
+            src="https://picsum.photos/id/445/150/200"
+            draggable="true"
+            alt="example video"
+            @dragstart=${this._dragStartItemHandler}
+            data-segmentname="filmname"
+            data-reference="444"
+            data-type="video"
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1500"

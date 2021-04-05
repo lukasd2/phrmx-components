@@ -8,9 +8,27 @@ export const trackEditorStyles = css`
     --zoom-factor: 0px;
   }
 
+  .timer-controls {
+    font-size: 2rem;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .timer-container {
+    margin: 1em;
+  }
+
+  .timer-controls .timer-button {
+    border: solid 1px #e5e7eb;
+    border-radius: 6px;
+  }
+
   .track-editor {
     background-color: #fff;
-    border: 2px solid #1a2b42;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -35,10 +53,12 @@ export const trackEditorStyles = css`
   }
 
   .tracks-info {
+    font-size: 2.5rem;
     display: flex;
     flex-direction: column;
     width: 50px;
-    justify-content: center;
+    justify-content: end;
+    align-items: center;
   }
 
   .tracks-info .track-type {
@@ -57,7 +77,7 @@ export const trackEditorStyles = css`
     align-items: center;
     flex-direction: row;
     height: 150px;
-    background-color: lightsalmon;
+    background-color: aliceblue;
   }
   .video-track.hoverWithDrag img {
     pointer-events: none;
