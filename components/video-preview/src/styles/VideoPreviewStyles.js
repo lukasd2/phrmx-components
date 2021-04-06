@@ -8,6 +8,19 @@ export const videoPreviewStyles = css`
     height: 100%;
   }
 
+  .preview-header {
+    display: flex;
+    justify-content: center;
+  }
+
+  .videoEditorTitle {
+    text-align: center;
+    padding: 1em;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+  }
+
   .media-board-wrapper {
     position: relative;
     margin: auto;

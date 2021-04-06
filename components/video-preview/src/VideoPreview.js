@@ -8,12 +8,12 @@ export class VideoPreview extends LitElement {
 
   static get properties() {
     return {
-      VideoEditorTitle: { type: String },
+      videoEditorTitle: { type: String },
       trackElements: { type: Object },
-      playbackArray: { type: Array },
-      nextStep: { type: Number },
       playedElement: { type: Number },
       resources: { type: Array },
+      executeSegmentsPreview: { type: Array },
+      terminateSegmentsPreview: { type: Array },
       singleMediaPreview: { type: Object },
       displayMediaPreview: { type: Boolean },
       displayLoadingScreen: { type: Boolean },
@@ -22,13 +22,11 @@ export class VideoPreview extends LitElement {
 
   constructor() {
     super();
-    this.VideoEditorTitle = 'This is your new video title';
+    this.videoEditorTitle = 'This is your new video title';
     this.trackElements = {};
-    this.resources = [];
-    this.playbackArray = [];
-    this.nextStep = 0;
     this.playedElement = 0;
     this.displayMediaPreview = false;
+    this.playback = '';
   }
 
   connectedCallback() {
@@ -36,22 +34,44 @@ export class VideoPreview extends LitElement {
     console.debug('DEBUG: VideoPreview successfuly added to the DOM');
   }
 
+  firstUpdated() {
+    this.playback = this.shadowRoot.getElementById('playback');
+  }
+
   updated(changedProperties) {
     //console.debug('changedProperty', changedProperties); // logs previous values
     if (changedProperties.has('resources')) {
-      const playback = this.shadowRoot.getElementById('playback');
-      console.debug(playback.children);
-      const playbackArray = [...playback.children];
-      this.playbackArray = playbackArray;
+      // TODO: this might be a good place to finish loading resources before playing
+    }
+    if (changedProperties.has('executeSegmentsPreview')) {
+      if (this.executeSegmentsPreview.length > 0) {
+        this._startPreview();
+      }
     }
 
-    if (changedProperties.has('actualTime')) {
-      if (this.playbackArray.length > 0) this._updatePlayback();
+    if (changedProperties.has('terminateSegmentsPreview')) {
+      if (this.terminateSegmentsPreview.length > 0) this._endPreview();
     }
 
     if (changedProperties.has('singleMediaPreview')) {
       this._updateBoardPreview();
     }
+  }
+
+  _startPreview() {
+    const playElements = this.playback.querySelector(
+      `.image-player-container.${this.executeSegmentsPreview[0].localRef}`
+    );
+    playElements.style.visibility = 'visible';
+    playElements.style.opacity = 1;
+  }
+
+  _endPreview() {
+    const stopElements = this.playback.querySelector(
+      `.image-player-container.${this.terminateSegmentsPreview[0].localRef}`
+    );
+    stopElements.style.visibility = 'hidden';
+    stopElements.style.opacity = 0;
   }
 
   _updateBoardPreview() {
@@ -63,41 +83,6 @@ export class VideoPreview extends LitElement {
     } else {
       this.displayMediaPreview = true;
     }
-  }
-
-  firstUpdated() {
-    this.initializeMediaCanvas();
-    const playback = this.shadowRoot.getElementById('playback');
-    console.debug(playback.children);
-    const playbackArray = [...playback.children];
-    this.playbackArray = playbackArray;
-  }
-
-  _updatePlayback() {
-    if (this.actualTime > this.nextStep && this.playedElement <= 2) {
-      console.warn('playedElement1', this.playedElement);
-      if (this.playedElement > 0) {
-        this.playbackArray[this.playedElement - 1].style.visibility = 'hidden';
-        this.playbackArray[this.playedElement - 1].style.opacity = 0;
-      }
-      let i = this.playedElement;
-
-      this.playbackArray[i].style.visibility = 'visible';
-      this.playbackArray[i].style.opacity = 1;
-      let startTime;
-      if (this.playbackArray[i + 1] !== undefined) {
-        startTime = this.playbackArray[i + 1].dataset.start;
-      } else {
-        startTime = 9999;
-      }
-
-      this.playedElement++;
-      this.nextStep = startTime;
-    }
-  }
-
-  initializeMediaCanvas() {
-    console.debug('initializeMediaCanvas');
   }
 
   composeLoadingTemplate() {
@@ -114,28 +99,85 @@ export class VideoPreview extends LitElement {
   }
 
   composeSingleMediaPreview() {
-    console.warn('composeSingleMediaPreview', this.singleMediaPreview);
-
-    let generatedTemplate;
     if (this.singleMediaPreview.type === 'image') {
-      generatedTemplate = this.composeImageLayer(
+      return html` ${this.composeSingleImageLayer(
         this.singleMediaPreview.download_url
-      );
-    } else {
-      // it is a video!
-      generatedTemplate = this.composeVideoLayer(
-        this.singleMediaPreview.video_files[0].link
-      );
+      )}`;
     }
-    console.warn(generatedTemplate);
-    return html`${generatedTemplate}`;
+    // solution to a common issue with HTML video player, that allows for dynamically replace source of currently playing video
+    // TODO: same solution for music-player
+    if (this.shadowRoot.querySelector('.video-player-content')) {
+      const existingPlayer = this.shadowRoot.querySelector(
+        '.video-player-content'
+      );
+      const existingSource = this.shadowRoot.querySelector(
+        '.video-player__source'
+      );
+      existingPlayer.pause();
+      existingSource.src = this.singleMediaPreview.video_files[0].link;
+      existingPlayer.load();
+    }
+    if (this.singleMediaPreview.type === 'video') {
+      return html` ${this.composeSingleVideoLayer(
+        this.singleMediaPreview.video_files[0].link,
+        this.singleMediaPreview.id
+      )}`;
+    }
+    if (this.singleMediaPreview.type === 'music') {
+      return html` ${this.composeSingleMusicLayer(
+        this.singleMediaPreview.video_files[0].link,
+        this.singleMediaPreview.id
+      )}`;
+    }
   }
 
-  composeImageLayer(url) {
+  composeSingleImageLayer(url) {
     return html` <div
       class="image-player-container"
       style="visibility: visible; opacity: 1"
     >
+      <div
+        class="image-player-content"
+        style="background-image:url(${url}); visibility: visible; opacity: 1"
+      ></div>
+    </div>`;
+  }
+
+  composeSingleVideoLayer(url, id) {
+    return html` <div
+      class="video-player-container ${id}"
+      style="visibility: visible; opacity: 1"
+    >
+      <video class="video-player-content" preload="auto" autoplay>
+        <source
+          id="${id}"
+          class="video-player__source"
+          src=${url}
+          type="video/mp4"
+        />
+      </video>
+    </div>`;
+  }
+
+  composeSingleMusicLayer(url, id) {
+    return html` ${this.composeSingleImageLayer(url)}
+      <div
+        class="music-player-container"
+        style="visibility: hidden; opacity: 0"
+      >
+        <video class="music-player-content" preload="auto" autoplay>
+          <source
+            id="${id}"
+            class="music-player__source"
+            src=${url}
+            type="video/mp4"
+          />
+        </video>
+      </div>`;
+  }
+
+  composeImageLayer(url, ref) {
+    return html` <div class="image-player-container ${ref}">
       <div
         class="image-player-content"
         style="background-image:url(${url})"
@@ -143,11 +185,16 @@ export class VideoPreview extends LitElement {
     </div>`;
   }
 
-  composeVideoLayer(url) {
-    return html` <div
-      class="video-player-container"
-      style="visibility: visible; opacity: 1"
-    >
+  composeVideoLayer(url, ref) {
+    return html` <div class="video-player-container" ${ref}">
+      <video class="video-player-content" preload="auto" autoplay>
+        <source src=${url} type="video/mp4" />
+      </video>
+    </div>`;
+  }
+
+  composeMusicLayer(url, ref) {
+    return html` <div class="video-player-container" ${ref}">
       <video class="video-player-content" preload="auto" autoplay>
         <source src=${url} type="video/mp4" />
       </video>
@@ -157,13 +204,28 @@ export class VideoPreview extends LitElement {
   composeMediaLayersTemplate() {
     if (this.resources.length > 0) {
       const generatedTemplate = this.resources.map(res => {
-        return html` <div class="image-player-container">
-          <div
-            class="image-player-content"
-            style="background-image:url(${res.response.download_url})"
-            data-start=${this.formatTimeFromHoundreths(5000)}
-          ></div>
-        </div>`;
+        if (res.request.mediaType === 'image') {
+          return html`
+            ${this.composeImageLayer(
+              res.response.download_url,
+              res.request.localRef
+            )}
+          `;
+        } else if (res.request.mediaType === 'video') {
+          return html`
+            ${this.composeVideoLayer(
+              res.response.video_files[0].link,
+              res.request.localRef
+            )}
+          `;
+        } else if (res.request.mediaType === 'music') {
+          return html`
+            ${this.composeMusicLayer(
+              res.response.video_files[0].link,
+              res.request.localRef
+            )}
+          `;
+        }
       });
       return html`${generatedTemplate}`;
     }
@@ -171,8 +233,13 @@ export class VideoPreview extends LitElement {
 
   render() {
     return html`
-      <h3 class="videoEditorTitle">${this.VideoEditorTitle}</h3>
-
+      <header class="preview-header">
+        <h3 class="videoEditorTitle">
+          <span>"</span>
+          <p contenteditable="true">${this.videoEditorTitle}</p>
+          <span>"</span>
+        </h3>
+      </header>
       <div class="media-board-wrapper">
         <div class="media-board-element">
           <div class="media-board-inner">
@@ -187,21 +254,6 @@ export class VideoPreview extends LitElement {
                 ${this.displayMediaPreview
                   ? html` ${this.composeSingleMediaPreview()} `
                   : ''}
-
-                <!--  <div class="image-player-container">
-                  <div class="image-player-content"></div>
-                </div>
-                <div class="video-player-container" data-start="1000">
-                  <video class="video-player-content" preload="none">
-                    <source
-                      src="https://media.w3.org/2010/05/sintel/trailer.mp4"
-                      type="video/mp4"
-                    />
-                  </video>
-                </div>
-                <div class="image-player-container" data-start="2000">
-                  <div class="image-player-content2"></div>
-                </div> -->
               </div>
             </div>
           </div>
