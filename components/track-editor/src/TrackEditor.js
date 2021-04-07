@@ -12,6 +12,8 @@ export class TrackEditor extends LitElement {
       timeSegmentWidth: { type: Number },
       zoomFactor: { type: Number },
       numberOfTrackElements: { type: Number },
+      segmentsOnTracks: { type: Array },
+      goForLaunch: { type: Boolean },
     };
   }
 
@@ -34,6 +36,10 @@ export class TrackEditor extends LitElement {
     this.numberOfTrackElements = 0;
     this.allTracksElements = [];
     this.trackElements = {};
+    this.segmentsOnTracks = [];
+    this.startingPreviews = [];
+    this.endingPreviews = [];
+    this.goForLaunch = false;
   }
 
   connectedCallback() {
@@ -46,55 +52,6 @@ export class TrackEditor extends LitElement {
         this._updateMarkerPosition
       );
     });
-  }
-
-  toggleMenuOnff = activeClass => {
-    if (this.contextMenuState !== 0) {
-      this.contextMenuState = 0;
-      this.contextMenu.classList.remove(activeClass);
-    }
-  };
-
-  _manageContextMenu(ev) {
-    ev.preventDefault();
-
-    const activeClass = 'context-menu--active';
-
-    const toggleMenuOn = () => {
-      if (this.contextMenuState !== 1) {
-        this.contextMenuState = 1;
-        this.contextMenu.classList.add(activeClass);
-      }
-    };
-
-    const positionContextMenu = () => {
-      let positionX = 0;
-      let positionY = 0;
-
-      if (ev.pageX || ev.pageY) {
-        positionX = ev.pageX;
-        positionY = ev.pageY;
-      }
-      this.contextMenu.style.left = positionX + 'px';
-      this.contextMenu.style.top = positionY + 'px';
-      const localRef = ev.target.parentNode.getAttribute('localRef');
-      const trackRef = ev.target.parentNode.getAttribute('trackRef');
-      this.contextMenu.setAttribute('localRef', localRef);
-      this.contextMenu.setAttribute('trackRef', trackRef);
-    };
-
-    const RESIZER_LEFT = 'resizerLeft';
-    const RESIZER_RIGHT = 'resizerRight';
-    if (
-      ev.target.className === RESIZER_LEFT ||
-      ev.target.className === RESIZER_RIGHT ||
-      ev.target.className === 'video-row'
-    ) {
-      toggleMenuOn();
-      positionContextMenu();
-    } else {
-      this.toggleMenuOnff(activeClass);
-    }
   }
 
   firstUpdated() {
@@ -119,19 +76,74 @@ export class TrackEditor extends LitElement {
   }
 
   updated(changedProperties) {
-    console.debug('changedProperty', changedProperties); // logs previous values
     if (changedProperties.has('dragEnd')) {
       this._updateDragEnd();
     }
     if (changedProperties.has('zoomFactor')) {
       this._updateZoom();
     }
+    if (changedProperties.has('actualTime')) {
+      if (this.startingPreviews[0]) {
+        // TODO: branch if multiple elements ends on same time
+        if (this.actualTime + 1 >= this.startingPreviews[0].start) {
+          const startPlayingObjects = this.startingPreviews[0];
+          this.startingPreviews.shift(); // reverse and make it pop() as it is faster
+          // send a poke upwards to do something with a preview media
+          this.triggerStartPreview(startPlayingObjects);
+        }
+      }
+      if (this.endingPreviews[0]) {
+        // TODO: branch if multiple elements ends on same time
+        if (this.actualTime + 1 >= this.endingPreviews[0].end) {
+          const endPlayingObjects = this.endingPreviews[0];
+          this.endingPreviews.shift(); // reverse and make it pop() as it is faster
+          // send a poke upwards to do something with a preview media
+          this.triggerEndPreview(endPlayingObjects);
+        }
+      }
+    }
+    if (changedProperties.has('goForLaunch')) {
+      if (this.goForLaunch === true) this.secondsCounter();
+    }
+  }
+
+  triggerStartPreview(playingObjects) {
+    const event = new CustomEvent('start-preview', {
+      detail: {
+        start: playingObjects,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
+  }
+
+  dispatchEventForPreview() {
+    this.orderElementsByStartDate();
+    this.makePreviewController();
+    const event = new CustomEvent('track-elements', {
+      detail: {
+        trackElements: this.segmentsOnTracks,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
+  }
+
+  triggerEndPreview(playingObjects) {
+    const event = new CustomEvent('end-preview', {
+      detail: {
+        end: playingObjects,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   _updateZoom() {
     this.timeSegmentWidth = 500 * (this.zoomFactor / 100);
-    this.transformValue = this.zoomFactor / 100;
-
     this.shadowRoot.host.style.setProperty(
       '--zoom-factor',
       this.timeSegmentWidth + 'px'
@@ -197,7 +209,6 @@ export class TrackEditor extends LitElement {
 
     const data = ev.dataTransfer.getData('text/plain');
     const dataThumbnailSrc = ev.dataTransfer.getData('text/uri-list');
-
     const dataFromDraggedRes = this.extractDataFromDraggedElement(data);
 
     const timeSegment = this.createDOMTimeSegment(
@@ -214,6 +225,9 @@ export class TrackEditor extends LitElement {
         'time-start',
         this.formatTimeFromHoundreths(trackObject.timeStart)
       );
+      timeSegment.setAttribute('datax', trackObject.timeStart);
+
+      timeSegment.setAttribute('start', trackObject.timeStart);
       timeSegment.setAttribute(
         'time-end',
         this.formatTimeFromHoundreths(trackObject.timeEnd)
@@ -225,13 +239,18 @@ export class TrackEditor extends LitElement {
         'time-start',
         this.formatTimeFromHoundreths(trackObject.timeStart)
       );
+      timeSegment.setAttribute('start', trackObject.timeStart);
+      timeSegment.setAttribute('datax', trackObject.timeStart);
+
       timeSegment.setAttribute(
         'time-end',
         this.formatTimeFromHoundreths(trackObject.timeEnd)
       );
     }
+    const transformValue = trackObject.timeStart * (this.zoomFactor / 100);
     const segmentWidth = duration * (this.zoomFactor / 100);
     timeSegment.style.width = segmentWidth + 'px';
+    timeSegment.style.transform = `translateX(${transformValue}px)`;
 
     timeSegment.setAttribute('trackRef', currentTrackId);
 
@@ -241,6 +260,7 @@ export class TrackEditor extends LitElement {
 
     const trackElement = this.createObjectForPreviewRequest(timeSegment);
     this.trackElements[currentTrackId].elements.push(trackElement);
+    this.segmentsOnTracks.push(trackElement);
   }
 
   extractDataFromDraggedElement(data) {
@@ -297,6 +317,11 @@ export class TrackEditor extends LitElement {
     DOMtimeSegment.setAttribute('localRef', localRef);
 
     const trackElement = {
+      start: DOMtimeSegment.getAttribute('start'),
+      end:
+        Number(DOMtimeSegment.getAttribute('start')) +
+        Number(DOMtimeSegment.getAttribute('duration')),
+      duration: DOMtimeSegment.getAttribute('duration'),
       localRef: DOMtimeSegment.getAttribute('localRef'),
       trackRef: DOMtimeSegment.getAttribute('trackRef'),
       mediaType: DOMtimeSegment.getAttribute('type'),
@@ -388,20 +413,57 @@ export class TrackEditor extends LitElement {
   }
 
   _handleTimePlay(ev) {
-    console.debug('_handleTimePlay');
     this.dispatchEventForPreview();
-    this.secondsCounter();
+    if (this.goForLaunch === true) this.secondsCounter();
   }
 
-  dispatchEventForPreview() {
-    const event = new CustomEvent('track-elements', {
-      detail: {
-        trackElements: this.trackElements,
-      },
-      bubbles: true,
-      composed: true,
-    });
-    this.dispatchEvent(event);
+  orderElementsByStartDate() {
+    this.segmentsOnTracks = this.segmentsOnTracks.sort(
+      (prev, next) => prev.start - next.start
+    );
+  }
+
+  orderElementsByEndDate() {
+    const orderedByEndDate = this.segmentsOnTracks.sort(
+      (prev, next) => next.start + next.duration - (prev.start + prev.duration)
+    );
+    return orderedByEndDate;
+  }
+
+  makePreviewController() {
+    this.goForLaunch = false;
+    const previews = this.segmentsOnTracks;
+    const startsArray = Object.values(
+      previews.reduce((trackElement, { start, localRef }) => {
+        if (!trackElement[start])
+          trackElement[start] = {
+            start,
+            elements: [],
+          };
+        trackElement[start].elements.push({
+          localRef,
+        });
+        return trackElement;
+      }, {})
+    );
+
+    this.startingPreviews = startsArray;
+
+    const closePreview = this.orderElementsByEndDate();
+    const endsArray = Object.values(
+      closePreview.reduce((trackElement, { end, localRef }) => {
+        if (!trackElement[end])
+          trackElement[end] = {
+            end,
+            elements: [],
+          };
+        trackElement[end].elements.push({
+          localRef,
+        });
+        return trackElement;
+      }, {})
+    );
+    this.endingPreviews = endsArray;
   }
 
   _handleTimeStop(ev) {
@@ -419,7 +481,6 @@ export class TrackEditor extends LitElement {
   }
 
   _handleZoom(ev) {
-    console.debug('_handleZoom: ', ev.target.value);
     this.zoomFactor = ev.target.value;
   }
 
@@ -434,6 +495,7 @@ export class TrackEditor extends LitElement {
   }
 
   _handleTimeSegmentResize = ev => {
+    // FIXME: method to be revised
     ev.preventDefault();
     const RESIZER_LEFT = 'resizerLeft';
     const RESIZER_RIGHT = 'resizerRight';
@@ -497,7 +559,6 @@ export class TrackEditor extends LitElement {
                 0,
                 500
               );
-              console.warn('width', width);
               timeSegment.style.transform =
                 'translateX(' + translateXValue + 'px)';
               timeSegment.setAttribute('datax', translateXValue);
@@ -545,7 +606,6 @@ export class TrackEditor extends LitElement {
       }
 
       const _startMoving = ev => {
-        console.warn('startMoving');
         const startX =
           timeSegment.offsetLeft + 50 + timeSegment.offsetWidth / 2;
 
@@ -555,7 +615,8 @@ export class TrackEditor extends LitElement {
           let fn = this.generateScaleFunction(0, this.timeSegmentWidth, 0, 500);
 
           timeSegment.style.transform = 'translateX(' + translateXValue + 'px)';
-          timeSegment.setAttribute('datax', translateXValue);
+          timeSegment.setAttribute('datax', fn(translateXValue));
+          timeSegment.setAttribute('start', translateXValue);
           timeSegment.setAttribute(
             'time-start',
             this.formatTimeFromHoundreths(
@@ -576,8 +637,7 @@ export class TrackEditor extends LitElement {
       };
 
       const _stopMoving = () => {
-        console.warn('stopMoving');
-
+        //this.findCollisions(timeSegment); // TODO: to implement, https://stackoverflow.com/questions/47667827/javascript-check-numeric-range-overlapping-in-array
         this.updateTimeSegmentAttributes(timeSegment);
         if (timeSegment.classList.contains('inMotion'));
         timeSegment.classList.remove('inMotion');
@@ -596,6 +656,8 @@ export class TrackEditor extends LitElement {
     const trackId = timeSegment.getAttribute('trackRef');
     const elementsList = this.trackElements[trackId].elements;
 
+    const elementsListSimple = this.segmentsOnTracks;
+
     const datax = timeSegment.getAttribute('datax');
     const duration = timeSegment.getAttribute('duration');
 
@@ -603,10 +665,31 @@ export class TrackEditor extends LitElement {
 
     const currentSegmentIndex = elementsList.findIndex(isEqualToLocalReference);
 
+    const result = elementsListSimple.findIndex(isEqualToLocalReference);
+
     const timeStart = this.formatTimeFromHoundreths(datax);
+    const timeEndInHoundreds =
+      //(Number(datax) * this.zoomFactor) / 100 + Number(duration);
+      Number(datax) + Number(duration);
+
     const timeEnd = this.formatTimeFromHoundreths(
       Number(datax) + Number(duration)
     );
+
+    elementsListSimple[result] = {
+      ...elementsListSimple[result],
+      start: datax,
+      timeStart: timeStart,
+      timeEnd: timeEnd,
+    };
+
+    const trackStart = this.trackElements[trackId].timeStart;
+    const trackEnd = this.trackElements[trackId].timeEnd;
+
+    if (timeStart < trackStart)
+      this.trackElements[trackId].timeStart = timeStart;
+    if (timeEndInHoundreds > trackEnd)
+      this.trackElements[trackId].timeEnd = timeEndInHoundreds;
 
     elementsList[currentSegmentIndex] = {
       ...elementsList[currentSegmentIndex],
@@ -634,6 +717,55 @@ export class TrackEditor extends LitElement {
 
     const currentSegmentIndex = elementsList.findIndex(isEqualToLocalReference);
     elementsList.splice(currentSegmentIndex, 1);
+  }
+
+  toggleMenuOnff = activeClass => {
+    if (this.contextMenuState !== 0) {
+      this.contextMenuState = 0;
+      this.contextMenu.classList.remove(activeClass);
+    }
+  };
+
+  _manageContextMenu(ev) {
+    ev.preventDefault();
+
+    const activeClass = 'context-menu--active';
+
+    const toggleMenuOn = () => {
+      if (this.contextMenuState !== 1) {
+        this.contextMenuState = 1;
+        this.contextMenu.classList.add(activeClass);
+      }
+    };
+
+    const positionContextMenu = () => {
+      let positionX = 0;
+      let positionY = 0;
+
+      if (ev.pageX || ev.pageY) {
+        positionX = ev.pageX;
+        positionY = ev.pageY;
+      }
+      this.contextMenu.style.left = positionX + 'px';
+      this.contextMenu.style.top = positionY + 'px';
+      const localRef = ev.target.parentNode.getAttribute('localRef');
+      const trackRef = ev.target.parentNode.getAttribute('trackRef');
+      this.contextMenu.setAttribute('localRef', localRef);
+      this.contextMenu.setAttribute('trackRef', trackRef);
+    };
+
+    const RESIZER_LEFT = 'resizerLeft';
+    const RESIZER_RIGHT = 'resizerRight';
+    if (
+      ev.target.className === RESIZER_LEFT ||
+      ev.target.className === RESIZER_RIGHT ||
+      ev.target.className === 'video-row'
+    ) {
+      toggleMenuOn();
+      positionContextMenu();
+    } else {
+      this.toggleMenuOnff(activeClass);
+    }
   }
 
   // FIXME: for separate component test purposes only
@@ -764,6 +896,7 @@ export class TrackEditor extends LitElement {
             data-segmentname="filmname"
             data-reference="999"
             data-type="image"
+            data-duration="500"
             tabindex="0"
           />
         </div>
@@ -777,7 +910,7 @@ export class TrackEditor extends LitElement {
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
             data-reference="555"
-            data-type="video"
+            data-type="image"
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1000"

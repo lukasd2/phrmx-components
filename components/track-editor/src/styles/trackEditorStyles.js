@@ -71,6 +71,7 @@ export const trackEditorStyles = css`
     height: 150px;
     background-color: aliceblue;
     align-items: center;
+    position: relative;
   }
   .music-track {
     display: flex;
@@ -78,6 +79,7 @@ export const trackEditorStyles = css`
     flex-direction: row;
     height: 150px;
     background-color: aliceblue;
+    position: relative;
   }
   .video-track.hoverWithDrag img {
     pointer-events: none;
@@ -125,10 +127,10 @@ export const trackEditorStyles = css`
   .time-segment {
     display: flex;
     height: 100%;
+    position: absolute;
     /* width: calc(var(--default-lenght) - var(--zoom-factor)); */
     width: var(--zoom-factor);
     align-items: center;
-    position: relative;
     --default-lenght: 500px;
     flex-grow: 0;
     flex-shrink: 0;
