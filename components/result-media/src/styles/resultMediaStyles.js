@@ -2,33 +2,68 @@ import { css } from 'lit-element';
 
 export const resultMediaStyles = css`
   :host {
-    grid-column: 5/13;
-    border: 1px solid black;
-    border-radius: 5px;
-    padding: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    flex-direction: column;
+    border: solid 1px #e5e7eb;
+    border-bottom: none;
+    border-radius: 3px;
+    background-color: white;
+    min-width: 20rem;
+    max-width: 100%;
+  }
+
+  .header {
+    margin-bottom: 20px;
+  }
+
+  .header__headline {
+    text-align: center;
+    border-bottom: solid #e5e7eb;
+  }
+
+  .header__title {
+    font-size: 1.2em;
+    margin: 0;
+    padding: 20px 0 10px 0;
   }
 
   .thumbnail-list {
     display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-
+    flex-wrap: wrap;
+    justify-content: center;
+    flex-shrink: 1;
+    font-size: 0;
+    margin: 0 auto;
     list-style: none;
     padding: 0;
-    margin: 0;
     min-height: 250px;
-    flex-wrap: wrap;
   }
 
   .thumbnail-element {
+    display: inline-block;
+    font-size: 18px;
     margin: 10px 10px 10px 10px;
     box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1),
       0 0 0 1px rgba(10, 10, 10, 0.02);
-    width: 100px;
-    height: 120px;
     overflow: hidden;
     border-radius: 10px;
     box-sizing: border-box;
+  }
+
+  .thumbnail-element.loading {
+    box-shadow: 0 0em 0em 0em rgba(10, 10, 10, 0.1),
+      0 0 0 0 rgba(10, 10, 10, 0.02);
+  }
+
+  .thumbnail-element.dragging {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+
+  .thumbnail-element.loading:hover,
+  .thumbnail-element:focus {
+    pointer-events: none;
   }
 
   .thumbnail-element .image-thumbnail {
@@ -36,18 +71,18 @@ export const resultMediaStyles = css`
   }
 
   .thumbnail-element:focus .image-thumbnail {
-    transform: scale(1.3);
+    transform: scale(1.2);
   }
 
   .thumbnail-element:hover,
   .thumbnail-element:focus {
-    border: solid 1px #00b4cc;
+    border-color: #00b4cc;
     box-shadow: 0 0 5px 1px #00b4cc;
   }
 
   .thumbnail-element:hover .image-thumbnail {
-    cursor: pointer;
-    transform: scale(1.3);
+    cursor: grab;
+    transform: scale(1.2);
   }
 
   .thumbnail-element > .thumbnail-tooltip {
@@ -70,14 +105,6 @@ export const resultMediaStyles = css`
     z-index: 10;
   }
 
-  .image-thumbnail {
-    max-height: 100%;
-    min-width: 100%;
-    object-fit: cover;
-    vertical-align: bottom;
-    border-radius: 10px;
-  }
-
   img {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -85,5 +112,32 @@ export const resultMediaStyles = css`
   img.dragging {
     opacity: 0.5;
     transform: scale(0.8);
+  }
+
+  .card-image {
+    --padding: var(--sl-spacing-small);
+  }
+
+  .image-thumbnail {
+    width: 7rem;
+    height: 9rem;
+    max-height: 100%;
+    min-width: 100%;
+    object-fit: cover;
+    vertical-align: bottom;
+  }
+
+  .btn-icon {
+    font-size: 20px;
+  }
+
+  .skeleton-shapes sl-skeleton {
+    display: inline-flex;
+    width: 162px;
+    height: 216px;
+  }
+
+  .skeleton-shapes .square::part(indicator) {
+    --border-radius: 3px;
   }
 `;
