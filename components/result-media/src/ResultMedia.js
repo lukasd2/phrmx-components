@@ -116,7 +116,7 @@ export class ResultMedia extends LitElement {
             data-clipstart="00.50"
             data-clipend="00.50"
             data-reference="${answer.reference}"
-            data-duration="500"
+            data-duration=${answer.duration ? answer.duration * 100 : '500'}
             tabindex="0"
           >
             <sl-tooltip>
