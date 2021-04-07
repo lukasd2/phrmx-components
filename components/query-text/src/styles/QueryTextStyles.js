@@ -1,13 +1,14 @@
 import { css } from 'lit-element';
 
 export const queryTextStyles = css`
+
             :host {
-                grid-column: 4/10;
+                font-family: Arial, Helvetica, sans-serif;
             }
+            
             .search-bar {
                 width: 100%;
                 text-align: center;
-                height: 50px;
                 border: 1px solid #00b4cc;
                 margin: 0 auto;
                 font-size: 1.4rem;
@@ -19,15 +20,20 @@ export const queryTextStyles = css`
                 box-shadow: 0 0 5px 1px #00b4cc;
             }
             .search-results li {
-                border: 1px solid #00b4cc;
+                border: 1px solid var(--sl-color-gray-300);
+                border-radius: 3px;
                 font-size: 1.2rem;
                 padding: 10px;
+                background-color: #f9fafb;
             }
             .search-results {
                 align-items: stretch;
                 list-style-type: none;
                 padding: 0;
                 margin: 0 auto;
+                width: 100%;
+                position: absolute;
+                z-index: 100;
             }
             .search-results li:hover {
                 background: #34b399;
@@ -38,5 +44,9 @@ export const queryTextStyles = css`
             }
             .search-box {
                 display: flex;
+            }
+
+            .search-results__container {
+                position: relative;
             }
     }`;

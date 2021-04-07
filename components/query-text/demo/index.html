@@ -7,17 +7,31 @@
 			content="width=device-width, initial-scale=1.0, viewport-fit=cover"
 		/>
 		<meta name="Description" content="Put your description here." />
+		<link rel="stylesheet" href="../dist/bundle.css" />
 	</head>
 	<style>
 		body {
-			display: grid;
-			grid-template-columns: repeat(12, 1fr);
-			grid-gap: 20px;
+			
 		}
+
 	</style>
 	<body>
-		<query-text placeholderText="Cerca tra i contenuti..."> </query-text>
+		<query-text placeholderText="Cerca tra i contenuti...">
+			<sl-button
+				slot="search-button-slot"
+				class="search-button"
+				type="default"
+				size="large"
+			>
+				<sl-icon slot="suffix" name="search"></sl-icon>
+				Refresh
+			</sl-button>
+		</query-text>
 
-		<script type="module" src="../query-text.js"></script>
+		<script type="module" src="../dist/index.js"></script>
+		<script
+			type="module"
+			src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.36/dist/shoelace.js"
+		></script>
 	</body>
 </html>

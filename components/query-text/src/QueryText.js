@@ -2,6 +2,7 @@ import { html, LitElement } from 'lit-element';
 
 import Fuse from 'fuse.js';
 
+import { debounce } from 'lodash-es';
 import { queryTextStyles } from './styles/QueryTextStyles.js';
 
 export class QueryText extends LitElement {
@@ -31,7 +32,21 @@ export class QueryText extends LitElement {
 		this.textInput = '';
 		this.mintextInputLenght = 2;
 		this.maxAutocompleteSuggestions = 10;
-		this.dictionaries = {};
+		this.dictionaries = {
+			'@': [
+				'Valerio Ciriaci',
+				'Alessio Genovese',
+				'Paola Rossi',
+				'Lilly Wachowski',
+			],
+			'title:': [
+				'Mister Wonderland',
+				'L’ultima frontiera',
+				'Storie di Valerio',
+				'Matrix',
+			],
+			'nationality:': ['Russia', 'Indonesia', 'Italia', 'Stati Uniti'],
+		};
 		this.prefixesToRegexMapping = {};
 		this.autocompleteResults = [];
 		this.fuzzySearchOpts = {
@@ -45,6 +60,10 @@ export class QueryText extends LitElement {
 		this.currentMatch = '';
 		this.activePrefix = '';
 		this.distinctAutocompletes = [];
+		this.debouncedTextInputHandler = debounce(
+			this._handleTextInputEvent.bind(this),
+			150
+		);
 	}
 
 	/* LIFECYCLE METHODS */
@@ -56,7 +75,9 @@ export class QueryText extends LitElement {
 	}
 
 	firstUpdated() {
-		this.searchInput = this.shadowRoot.querySelector('.search-bar');
+		const searchInput = this.shadowRoot.querySelector('.search-bar');
+		this.searchInput = searchInput;
+		searchInput.addEventListener('keyup', this.debouncedTextInputHandler);
 	}
 
 	updated(changedProperties) {
@@ -69,8 +90,7 @@ export class QueryText extends LitElement {
 	updateDictionariesInfo() {
 		if (!this.dictionaries || Object.keys(this.dictionaries).length === 0)
 			return null;
-		// pipe or function reducer would be ideal for cleaner code. The choice is to not add helper functions for now
-		// TODO: Possibile improvement at next iteration, add loadash utility library
+
 		const extractedPrefixes = this.extractPrefixesFromDictionaries();
 
 		const prefixesToRegexMapping = this.createMatchingRegexFromPrefixes(
@@ -117,7 +137,8 @@ export class QueryText extends LitElement {
 	/* EVENT HANDLERS */
 
 	_handleTextInputEvent(ev) {
-		const textInput = this.trimString(ev.target.value);
+		const searchInputValue = this.searchInput.value;
+		const textInput = this.trimString(searchInputValue);
 		this.textInput = textInput;
 		this.showSearchSuggestions = false;
 		if (this.isTextInputLenghtGreaterThanThreshold(textInput)) {
@@ -292,7 +313,6 @@ export class QueryText extends LitElement {
 			activePrefix,
 			''
 		);
-
 		return cleanTextWithoutPrefix;
 	}
 
@@ -330,24 +350,45 @@ export class QueryText extends LitElement {
 		}
 	};
 
+	handleClick(ev) {
+		if (this.isTextInputLenghtGreaterThanThreshold(this.textInput)) {
+			console.log('click', ev);
+			this.showSearchSuggestions = false;
+			const event = new CustomEvent('search-query-event', {
+				detail: {
+					searchedQuery: this.textInput,
+				},
+				bubbles: true,
+				composed: true,
+			});
+			this.dispatchEvent(event);
+		}
+	}
+
 	render() {
 		return html`
 			<div class="search-box">
 				<input
-					@keyup=${this._handleTextInputEvent}
 					class="search-bar"
 					type="text"
 					placeholder="${this.placeholderText}"
 					maxlength="150"
 				/>
-				<!-- TODO: put search button here -->
-				<slot></slot>
+				<slot
+					name="search-button-slot"
+					@click="${this.handleClick}"
+				></slot>
 			</div>
-			<ul class="search-results" @click=${this._handleAutocompleteList}>
-				${this.showSearchSuggestions
-					? html` ${this.composeSearchResultsTemplate()} `
-					: ''}
-			</ul>
+			<div class="search-results__container">
+				<ul
+					class="search-results"
+					@click=${this._handleAutocompleteList}
+				>
+					${this.showSearchSuggestions
+						? html` ${this.composeSearchResultsTemplate()} `
+						: ''}
+				</ul>
+			</div>
 		`;
 	}
 }

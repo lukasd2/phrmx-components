@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import '../query-text.js';
+import '../dist/index.js';
 
 export default {
 	title: 'QueryText',
