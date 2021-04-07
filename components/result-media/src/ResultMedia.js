@@ -57,7 +57,6 @@ export class ResultMedia extends LitElement {
   }
 
   _onDragEnd(ev) {
-    console.debug('onDragEnd', ev.target);
     ev.preventDefault();
     if (ev.target === 'LI') ev.target.classList.remove('dragging');
     else ev.target.closest('li').classList.remove('dragging');
