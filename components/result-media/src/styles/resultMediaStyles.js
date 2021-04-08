@@ -37,7 +37,13 @@ export const resultMediaStyles = css`
     margin: 0 auto;
     list-style: none;
     padding: 0;
-    min-height: 250px;
+    min-height: 300px;
+    overflow-y: scroll;
+    scrollbar-width: none;
+  }
+
+  .thumbnail-list::-webkit-scrollbar {
+    display: none;
   }
 
   .thumbnail-element {
@@ -119,8 +125,8 @@ export const resultMediaStyles = css`
   }
 
   .image-thumbnail {
-    width: 7rem;
-    height: 9rem;
+    width: 6rem;
+    height: 8rem;
     max-height: 100%;
     min-width: 100%;
     object-fit: cover;
