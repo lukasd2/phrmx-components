@@ -6,7 +6,6 @@ export const resultMediaStyles = css`
     display: flex;
     flex-direction: column;
     border: solid 1px #e5e7eb;
-    border-bottom: none;
     border-radius: 3px;
     background-color: white;
     min-width: 20rem;
@@ -124,8 +123,26 @@ export const resultMediaStyles = css`
     --padding: var(--sl-spacing-small);
   }
 
+  .card-content {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .card-content.image sl-badge::part(base) {
+    background-color: var(--sl-color-primary-500);
+  }
+
+  .card-content.video sl-badge::part(base) {
+    background-color: violet;
+  }
+
+  .card-image sl-icon-button::part(base) {
+    color: var(--sl-color-gray-100);
+    background: var(--sl-color-primary-700);
+  }
+
   .image-thumbnail {
-    width: 6rem;
+    width: 8rem;
     height: 8rem;
     max-height: 100%;
     min-width: 100%;

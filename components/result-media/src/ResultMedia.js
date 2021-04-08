@@ -63,7 +63,7 @@ export class ResultMedia extends LitElement {
   }
 
   _emitPreviewData(ev) {
-    if (ev.target.tagName === 'SL-BUTTON') {
+    if (ev.target.tagName === 'SL-ICON-BUTTON') {
       const thumbnailElement = ev.currentTarget;
       const thumbnailElementId = thumbnailElement.getAttribute(
         'data-reference'
@@ -130,14 +130,13 @@ export class ResultMedia extends LitElement {
                   src=${answer.thumbnail_url}
                   alt="Qui una descrizione a parole della immagine scaricata"
                 />
-                <sl-button type="primary"
-                  ><sl-icon
-                    slot="suffix"
-                    class="btn-icon"
+                <div class="card-content ${answer.media_type}">
+                  <sl-badge>${answer.media_type}</sl-badge>
+                  <sl-icon-button
                     name="play-circle"
-                  ></sl-icon
-                  >Riproduci</sl-button
-                >
+                    label="Riproduci"
+                  ></sl-icon-button>
+                </div>
               </sl-card>
             </sl-tooltip>
           </li>
