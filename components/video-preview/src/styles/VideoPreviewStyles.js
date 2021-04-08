@@ -28,7 +28,7 @@ export const videoPreviewStyles = css`
 
   .media-board-element {
     background: rgb(255, 255, 255) none repeat scroll 0% 0%;
-    box-shadow: rgba(14, 19, 24, 0.07) 0px 2px 8px;
+    box-shadow: var(--sl-shadow-x-large);
     border-radius: 8px;
     overflow: hidden;
     display: flex;

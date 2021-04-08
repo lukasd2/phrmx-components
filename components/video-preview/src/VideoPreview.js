@@ -59,16 +59,19 @@ export class VideoPreview extends LitElement {
   }
 
   _startPreview() {
+    console.warn('startPreview content', this.executeSegmentsPreview);
     const playElements = this.playback.querySelector(
-      `.image-player-container.${this.executeSegmentsPreview[0].localRef}`
+      `.${this.executeSegmentsPreview[0].localRef}`
     );
     playElements.style.visibility = 'visible';
     playElements.style.opacity = 1;
   }
 
   _endPreview() {
+    console.warn('_endPreview content', this.terminateSegmentsPreview);
+
     const stopElements = this.playback.querySelector(
-      `.image-player-container.${this.terminateSegmentsPreview[0].localRef}`
+      `.${this.terminateSegmentsPreview[0].localRef}`
     );
     stopElements.style.visibility = 'hidden';
     stopElements.style.opacity = 0;
@@ -186,9 +189,14 @@ export class VideoPreview extends LitElement {
   }
 
   composeVideoLayer(url, ref) {
-    return html` <div class="video-player-container" ${ref}">
+    return html` <div class="video-player-container ${ref}">
       <video class="video-player-content" preload="auto" autoplay>
-        <source src=${url} type="video/mp4" />
+        <source
+          id="${ref}"
+          class="video-player__source"
+          src=${url}
+          type="video/mp4"
+        />
       </video>
     </div>`;
   }
@@ -204,26 +212,17 @@ export class VideoPreview extends LitElement {
   composeMediaLayersTemplate() {
     if (this.resources.length > 0) {
       const generatedTemplate = this.resources.map(res => {
-        if (res.request.mediaType === 'image') {
+        if (res.mediaType === 'image') {
           return html`
-            ${this.composeImageLayer(
-              res.response.download_url,
-              res.request.localRef
-            )}
+            ${this.composeImageLayer(res.download_url, res.localRef)}
           `;
-        } else if (res.request.mediaType === 'video') {
+        } else if (res.mediaType === 'video') {
           return html`
-            ${this.composeVideoLayer(
-              res.response.video_files[0].link,
-              res.request.localRef
-            )}
+            ${this.composeVideoLayer(res.video_files[0].link, res.localRef)}
           `;
-        } else if (res.request.mediaType === 'music') {
+        } else if (res.mediaType === 'music') {
           return html`
-            ${this.composeMusicLayer(
-              res.response.video_files[0].link,
-              res.request.localRef
-            )}
+            ${this.composeMusicLayer(res.video_files[0].link, res.localRef)}
           `;
         }
       });
