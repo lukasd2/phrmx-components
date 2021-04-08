@@ -9,8 +9,8 @@ export const trackEditorStyles = css`
   }
 
   .timer-controls {
-    font-size: 2rem;
-    text-align: center;
+    font-size: 1.5rem;
+    width: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
