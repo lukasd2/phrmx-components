@@ -26,7 +26,7 @@ export class DemoApp extends LitElement {
         display: grid;
         grid-template-columns: repeat(12, 1fr);
         margin: 0 auto;
-        margin-top: 5em;
+        margin-top: 2em;
         padding: 1em;
         max-height: 100vh;
       }
