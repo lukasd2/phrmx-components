@@ -9,7 +9,9 @@ export class QueryUi extends LitElement {
 	static get styles() {
 		return css`
 			result-media {
-				margin-top: 50px;
+				margin-top: 40px;
+				height: 60vh;
+				overflow: hidden;
 			}
 		`;
 	}
