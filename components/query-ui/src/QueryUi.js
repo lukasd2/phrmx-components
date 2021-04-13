@@ -8,7 +8,11 @@ import 'result-media';
 export class QueryUi extends LitElement {
 	static get styles() {
 		return css`
+			query-text {
+				box-shadow: var(--sl-shadow-x-large);
+			}
 			result-media {
+				box-shadow: var(--sl-shadow-x-large);
 				margin-top: 40px;
 				height: 60vh;
 				overflow: hidden;
