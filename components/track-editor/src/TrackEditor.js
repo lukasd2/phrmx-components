@@ -2,6 +2,25 @@ import { LitElement, html } from 'lit-element';
 
 import { trackEditorStyles } from './styles/trackEditorStyles.js';
 
+const MEDIA_TYPES = {
+  VIDEO: 'video',
+  SOUND: 'sound',
+  IMAGE: 'image',
+};
+
+const TRACK_TYPES = {
+  VIDEO_TRACK: {
+    name: 'video-track',
+    it: 'traccia video',
+    supportedMedia: [MEDIA_TYPES.VIDEO, MEDIA_TYPES.IMAGE],
+  },
+  SOUND_TRACK: {
+    name: 'sound-track',
+    it: 'traccia audio',
+    supportedMedia: [MEDIA_TYPES.VIDEO, MEDIA_TYPES.SOUND],
+  },
+};
+
 export class TrackEditor extends LitElement {
   static get properties() {
     return {
@@ -14,6 +33,7 @@ export class TrackEditor extends LitElement {
       numberOfTrackElements: { type: Number },
       segmentsOnTracks: { type: Array },
       goForLaunch: { type: Boolean },
+      draggedElementType: { type: String },
     };
   }
 
@@ -40,6 +60,7 @@ export class TrackEditor extends LitElement {
     this.startingPreviews = [];
     this.endingPreviews = [];
     this.goForLaunch = false;
+    this.draggedElementType = '';
   }
 
   connectedCallback() {
@@ -173,8 +194,8 @@ export class TrackEditor extends LitElement {
   _onDragEnterHandler(ev) {
     ev.preventDefault();
     if (
-      ev.target.className === 'track-element video-track' ||
-      ev.target.className === 'track-element music-track'
+      ev.target.className === `track-element ${TRACK_TYPES.VIDEO_TRACK.name}` ||
+      ev.target.className === `track-element ${TRACK_TYPES.SOUND_TRACK.name}`
     ) {
       ev.target.classList.add('hoverWithDrag');
     }
@@ -198,12 +219,66 @@ export class TrackEditor extends LitElement {
     ev.target.classList.remove('hoverWithDrag');
   }
 
+  isMediaTypeDroppable(track) {
+    let currentType;
+    if (track.getAttribute('data-track') === TRACK_TYPES.VIDEO_TRACK.name) {
+      currentType = TRACK_TYPES.VIDEO_TRACK;
+    }
+    if (track.getAttribute('data-track') === TRACK_TYPES.SOUND_TRACK.name) {
+      currentType = TRACK_TYPES.SOUND_TRACK;
+    }
+    if (currentType.supportedMedia.includes(this.draggedElementType)) {
+      return true;
+    } else {
+      this.createToastAlert(
+        `Spiaciente, l'elemento ${this.draggedElementType} non può essere spostato sulla traccia ${currentType.it}`
+      );
+      return false;
+    }
+  }
+
+  createToastAlert(
+    message,
+    type = 'primary',
+    icon = 'info-circle',
+    duration = 3000
+  ) {
+    const alert = Object.assign(document.createElement('sl-alert'), {
+      type: type,
+      closable: true,
+      duration: duration,
+      innerHTML: `
+        <sl-icon name="${icon}" slot="icon"></sl-icon>
+        ${this.escapeHtml(message)}
+      `,
+    });
+
+    document.body.append(alert);
+    return alert.toast();
+  }
+
+  escapeHtml(html) {
+    const div = document.createElement('div');
+    div.textContent = html;
+    return div.innerHTML;
+  }
+
+  cancelDrop() {
+    console.warn('generate message about wrong data type');
+  }
+
   _onDropMediaHandler(ev) {
     ev.preventDefault();
     this._updateDragEnd();
-
     ev.currentTarget.classList.remove('hoverWithDrag');
+
+    const validType = this.isMediaTypeDroppable(ev.currentTarget);
+    if (!validType) {
+      return this.cancelDrop(ev);
+    }
+
     const currentTrackId = ev.currentTarget.id;
+    const trackType = ev.currentTarget.getAttribute('data-track');
 
     const trackObject = this.trackElements[currentTrackId];
 
@@ -211,10 +286,15 @@ export class TrackEditor extends LitElement {
     const dataThumbnailSrc = ev.dataTransfer.getData('text/uri-list');
     const dataFromDraggedRes = this.extractDataFromDraggedElement(data);
 
-    const timeSegment = this.createDOMTimeSegment(
-      dataFromDraggedRes,
-      dataThumbnailSrc
-    );
+    let timeSegment;
+    if (trackType === TRACK_TYPES.VIDEO_TRACK.name) {
+      timeSegment = this.createDOMTimeSegment(
+        dataFromDraggedRes,
+        dataThumbnailSrc
+      );
+    } else if (trackType === TRACK_TYPES.SOUND_TRACK.name) {
+      timeSegment = this.createDOMTimeSegment(dataFromDraggedRes);
+    }
 
     const duration = timeSegment.getAttribute('duration');
 
@@ -269,6 +349,9 @@ export class TrackEditor extends LitElement {
   }
 
   createDOMTimeSegment(data, thumbnailSrc) {
+    if (arguments.length === 1 || thumbnailSrc === undefined) {
+      thumbnailSrc = TRACK_TYPES.SOUND_TRACK;
+    }
     const newTimeSegment = document.createElement('div');
     newTimeSegment.classList.add('time-segment');
 
@@ -293,12 +376,18 @@ export class TrackEditor extends LitElement {
 
   createRowSegment(thumnbailSrc) {
     const rowElement = document.createElement('div');
-
     rowElement.classList.add('video-row');
-    rowElement.style.background = `url(${thumnbailSrc}) repeat space`;
-    rowElement.style.backgroundPosition = `center `;
-    rowElement.style.backgroundRepeat = 'repeat space';
 
+    if (thumnbailSrc === TRACK_TYPES.SOUND_TRACK) {
+      thumnbailSrc = 'https://img.icons8.com/fluent/48/000000/audio-wave.png';
+      rowElement.style.background = `url(${thumnbailSrc})`;
+      rowElement.style.backgroundPosition = `center `;
+      rowElement.style.backgroundRepeat = 'repeat-x ';
+    } else {
+      rowElement.style.background = `url(${thumnbailSrc}) repeat space`;
+      rowElement.style.backgroundPosition = `center `;
+      rowElement.style.backgroundRepeat = 'repeat space';
+    }
     return rowElement;
   }
 
@@ -679,6 +768,7 @@ export class TrackEditor extends LitElement {
     elementsListSimple[result] = {
       ...elementsListSimple[result],
       start: datax,
+      end: timeEndInHoundreds,
       timeStart: timeStart,
       timeEnd: timeEnd,
     };
@@ -773,6 +863,7 @@ export class TrackEditor extends LitElement {
     this.dragEnd = false;
     const thumnbailElement = ev.target;
     thumnbailElement.classList.add('dragging');
+    this.draggedElementType = thumnbailElement.dataset.type;
 
     const itemData = {
       type: thumnbailElement.dataset.type,
@@ -857,8 +948,9 @@ export class TrackEditor extends LitElement {
               @mousedown=${this._handleMarkerPress}
             ></div>
             <div
-              class="track-element video-track"
+              class="track-element ${TRACK_TYPES.VIDEO_TRACK.name}"
               id="videoTrack1"
+              data-track=${TRACK_TYPES.VIDEO_TRACK.name}
               @dragover="${this._onDragOverMediaHandler}"
               @dragenter="${this._onDragEnterHandler}"
               @dragleave="${this._onDragLeaveHandler}"
@@ -867,8 +959,9 @@ export class TrackEditor extends LitElement {
             ></div>
 
             <div
-              class="track-element music-track"
+              class="track-element ${TRACK_TYPES.SOUND_TRACK.name}"
               id="musicTrack1"
+              data-track=${TRACK_TYPES.SOUND_TRACK.name}
               @dragover="${this._onDragOverMediaHandler}"
               @dragenter="${this._onDragEnterHandler}"
               @dragleave="${this._onDragLeaveHandler}"
@@ -878,7 +971,6 @@ export class TrackEditor extends LitElement {
           </div>
         </div>
       </section>
-
       <nav class="context-menu" @click="${this._deleteTimeSegment}">
         <ul>
           <li class="context-option--delete">Delete</li>
@@ -895,7 +987,7 @@ export class TrackEditor extends LitElement {
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
             data-reference="999"
-            data-type="image"
+            data-type="${MEDIA_TYPES.IMAGE}"
             data-duration="500"
             tabindex="0"
           />
@@ -910,7 +1002,7 @@ export class TrackEditor extends LitElement {
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
             data-reference="555"
-            data-type="image"
+            data-type="${MEDIA_TYPES.IMAGE}"
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1000"
@@ -927,7 +1019,7 @@ export class TrackEditor extends LitElement {
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
             data-reference="444"
-            data-type="music"
+            data-type="${MEDIA_TYPES.SOUND}"
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1500"
@@ -943,7 +1035,7 @@ export class TrackEditor extends LitElement {
             @dragstart=${this._dragStartItemHandler}
             data-segmentname="filmname"
             data-reference="444"
-            data-type="video"
+            data-type="${MEDIA_TYPES.VIDEO}"
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1500"

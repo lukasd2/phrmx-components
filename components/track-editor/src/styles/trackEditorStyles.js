@@ -73,7 +73,7 @@ export const trackEditorStyles = css`
     align-items: center;
     position: relative;
   }
-  .music-track {
+  .sound-track {
     display: flex;
     align-items: center;
     flex-direction: row;
@@ -84,7 +84,7 @@ export const trackEditorStyles = css`
   .video-track.hoverWithDrag img {
     pointer-events: none;
   }
-  .music-track.hoverWithDrag img {
+  .sound-track.hoverWithDrag img {
     pointer-events: none;
   }
   .hoverWithDrag {
