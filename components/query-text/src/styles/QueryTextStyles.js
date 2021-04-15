@@ -14,6 +14,7 @@ export const queryTextStyles = css`
                 font-size: 1.4rem;
                 border-radius: 5px;
                 outline: none;
+                box-shadow: var(--sl-shadow-x-large);
             }
             .search-bar:focus {
                 border: solid 1px #707070;
