@@ -52,7 +52,12 @@ export class TrackEditor extends LitElement {
     this.timeSegmentWidth = 500;
     this.dragEnd = true;
     this.actualTime = 0;
-    this.interval;
+    this.clockOpts = {
+      timeBegan: null,
+      timeStopped: null,
+      stoppedDuration: 0,
+      interval: null,
+    };
     this.numberOfTrackElements = 0;
     this.allTracksElements = [];
     this.trackElements = {};
@@ -106,7 +111,7 @@ export class TrackEditor extends LitElement {
     if (changedProperties.has('actualTime')) {
       if (this.startingPreviews[0]) {
         // TODO: branch if multiple elements ends on same time
-        if (this.actualTime + 1 >= this.startingPreviews[0].start) {
+        if (this.actualTime + 0.1 >= this.startingPreviews[0].start) {
           const startPlayingObjects = this.startingPreviews[0];
           this.startingPreviews.shift(); // reverse and make it pop() as it is faster
           // send a poke upwards to do something with a preview media
@@ -115,7 +120,7 @@ export class TrackEditor extends LitElement {
       }
       if (this.endingPreviews[0]) {
         // TODO: branch if multiple elements ends on same time
-        if (this.actualTime + 1 >= this.endingPreviews[0].end) {
+        if (this.actualTime + 0.1 >= this.endingPreviews[0].end) {
           const endPlayingObjects = this.endingPreviews[0];
           this.endingPreviews.shift(); // reverse and make it pop() as it is faster
           // send a poke upwards to do something with a preview media
@@ -124,7 +129,7 @@ export class TrackEditor extends LitElement {
       }
     }
     if (changedProperties.has('goForLaunch')) {
-      if (this.goForLaunch === true) this.secondsCounter();
+      if (this.goForLaunch === true) this.secondsCounter(true);
     }
   }
 
@@ -426,31 +431,49 @@ export class TrackEditor extends LitElement {
     this.numberOfTrackElements = this.numberOfTrackElements + 1;
   }
 
-  secondsCounter = () => {
+  secondsCounter = (starts = false, stops = false, resets = false) => {
     //https://stackoverflow.com/questions/26329900/how-do-i-display-millisecond-in-my-stopwatch
-    let timeBegan = null;
-    let timeStopped = null;
-    let stoppedDuration = 0;
-
-    if (timeBegan === null) {
-      timeBegan = new Date();
-    } else {
-      clearInterval(this.interval);
-    }
-
-    if (timeStopped !== null) {
-      stoppedDuration += new Date() - timeStopped;
-    }
 
     const clockRunning = () => {
       let currentTime = new Date();
-      let timeElapsed = new Date(currentTime - timeBegan);
+      let timeElapsed = new Date(
+        currentTime - this.clockOpts.timeBegan - this.clockOpts.stoppedDuration
+      );
       this.synchroniseMarkerToTime();
 
       this.actualTime = timeElapsed / 10;
     };
 
-    this.interval = setInterval(clockRunning, 10);
+    const start = () => {
+      if (this.clockOpts.timeBegan === null) {
+        this.clockOpts.timeBegan = new Date();
+      } else {
+        clearInterval(this.clockOpts.interval);
+      }
+
+      if (this.clockOpts.timeStopped !== null) {
+        this.clockOpts.stoppedDuration +=
+          new Date() - this.clockOpts.timeStopped;
+      }
+
+      this.clockOpts.interval = setInterval(clockRunning, 10);
+    };
+    const stop = () => {
+      this.clockOpts.timeStopped = new Date();
+      clearInterval(this.clockOpts.interval);
+    };
+
+    const reset = () => {
+      clearInterval(this.clockOpts.interval);
+      this.clockOpts.stoppedDuration = 0;
+      this.clockOpts.timeBegan = null;
+      this.clockOpts.timeStopped = null;
+      this.actualTime = 0;
+      this.synchroniseMarkerToTime();
+    };
+    if (starts === true) start();
+    if (stops === true) stop();
+    if (resets === true) reset();
   };
 
   generateScaleFunction(prevMin, prevMax, newMin, newMax) {
@@ -501,9 +524,9 @@ export class TrackEditor extends LitElement {
     this.shadowRoot.addEventListener('mousemove', this._updateMarkerPosition);
   }
 
-  _handleTimePlay(ev) {
+  _handleTimePlay() {
     this.dispatchEventForPreview();
-    if (this.goForLaunch === true) this.secondsCounter();
+    if (this.goForLaunch === true) this.secondsCounter(true);
   }
 
   orderElementsByStartDate() {
@@ -535,7 +558,6 @@ export class TrackEditor extends LitElement {
         return trackElement;
       }, {})
     );
-
     this.startingPreviews = startsArray;
 
     const closePreview = this.orderElementsByEndDate();
@@ -555,18 +577,26 @@ export class TrackEditor extends LitElement {
     this.endingPreviews = endsArray;
   }
 
-  _handleTimeStop(ev) {
-    // TODO: to be implemented
-    console.debug('_handleTimeStop');
-    clearInterval(this.interval);
+  _handleTimeStop() {
+    this.goForLaunch = false;
+    this.dispatchStopPreview();
+    this.secondsCounter(false, true);
   }
 
-  _handleTimeReset(ev) {
-    // TODO: to be implemented
-    console.debug('_handleTimeReset');
-    this.dispatchEventForPreview();
+  dispatchStopPreview() {
+    const event = new CustomEvent('stop-preview', {
+      detail: {
+        goForLaunch: false,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
+  }
 
-    clearInterval(this.interval);
+  _handleTimeReset() {
+    this.goForLaunch = false;
+    this.secondsCounter(false, false, true);
   }
 
   _handleZoom(ev) {
@@ -907,7 +937,7 @@ export class TrackEditor extends LitElement {
             class="timer-button timer__restart"
             name="arrow-repeat"
             label="Riproduci dall'inzio"
-            @click=${this._handleTimeStop}
+            @click=${this._handleTimeReset}
           ></sl-icon-button>
         </sl-tooltip>
       </div>
@@ -1006,7 +1036,6 @@ export class TrackEditor extends LitElement {
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1000"
-            tabindex="0"
           />
         </div>
 
@@ -1023,7 +1052,6 @@ export class TrackEditor extends LitElement {
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1500"
-            tabindex="0"
           />
         </div>
         <div>
@@ -1039,7 +1067,6 @@ export class TrackEditor extends LitElement {
             data-clipstart="00.01"
             data-clipend="00.50"
             data-duration="1500"
-            tabindex="0"
           />
         </div>
       </div>

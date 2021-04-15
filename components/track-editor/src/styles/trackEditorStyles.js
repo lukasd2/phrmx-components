@@ -18,6 +18,8 @@ export const trackEditorStyles = css`
 
   .timer-container {
     margin: 1em;
+    display: flex;
+    width: 100px;
   }
 
   .timer-controls .timer-button {
