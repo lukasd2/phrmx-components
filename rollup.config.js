@@ -34,6 +34,10 @@ export default {
                     src: "node_modules/@shoelace-style/shoelace/dist/assets",
                     dest: "dist/shoelace",
                 },
+                {
+                    src: "assets",
+                    dest: "dist/",
+                },
             ],
             copyOnce: true,
         }),
