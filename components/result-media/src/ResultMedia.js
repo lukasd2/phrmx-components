@@ -30,7 +30,6 @@ export class ResultMedia extends LitElement {
   }
 
   _dragStartItemHandler(ev) {
-    console.warn('dragStart target,', ev.target);
     let thumbnailElement;
     if (ev.target === 'LI') {
       thumbnailElement = ev.target;
