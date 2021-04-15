@@ -30,6 +30,7 @@ export class ResultMedia extends LitElement {
   }
 
   _dragStartItemHandler(ev) {
+    console.warn('dragStart target,', ev.target);
     let thumbnailElement;
     if (ev.target === 'LI') {
       thumbnailElement = ev.target;
@@ -42,6 +43,8 @@ export class ResultMedia extends LitElement {
     thumbnailElement.classList.add('dragging');
 
     if (thumbnailElement) {
+      this._emitDraggedItemType(thumbnailElement.dataset.type);
+
       const itemData = {
         type: thumbnailElement.dataset.type,
         segmentname: thumbnailElement.dataset.segmentname,
@@ -60,6 +63,17 @@ export class ResultMedia extends LitElement {
     ev.preventDefault();
     if (ev.target === 'LI') ev.target.classList.remove('dragging');
     else ev.target.closest('li').classList.remove('dragging');
+  }
+
+  _emitDraggedItemType(type) {
+    const event = new CustomEvent('dragged-item-type', {
+      detail: {
+        draggedElementType: type,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   _emitPreviewData(ev) {
@@ -116,7 +130,6 @@ export class ResultMedia extends LitElement {
             data-clipend="00.50"
             data-reference="${answer.reference}"
             data-duration=${answer.duration ? answer.duration * 100 : '500'}
-            tabindex="0"
           >
             <sl-tooltip>
               <div slot="content">
