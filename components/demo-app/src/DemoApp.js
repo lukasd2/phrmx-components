@@ -15,7 +15,10 @@ export class DemoApp extends LitElement {
       resources: { type: Array },
       singleMediaRequestState: { type: Object },
       playSegments: { type: Array },
+      draggedElementType: { type: String },
       endSegments: { type: Array },
+      stopPlayer: { type: Boolean },
+      resumePlayer: { type: Boolean },
       goForLauch: { type: Boolean },
     };
   }
@@ -26,7 +29,6 @@ export class DemoApp extends LitElement {
         display: grid;
         grid-template-columns: repeat(12, 1fr);
         margin: 0 auto;
-        margin-top: 2em;
         padding: 1em;
         max-height: 100vh;
       }
@@ -53,7 +55,10 @@ export class DemoApp extends LitElement {
     };
     this.displayLoadingScreen = false;
     this.playSegments = [];
+    this.draggedElementType = '';
     this.endSegments = [];
+    this.stopPlayer = false;
+    this.resumePlayer = false;
     this.goForLauch = false;
   }
 
@@ -63,7 +68,10 @@ export class DemoApp extends LitElement {
 
     this.addEventListener('track-elements', this._handlePlayMedia);
     this.addEventListener('start-preview', this._handleStartPreview);
-    this.addEventListener('end-preview', this._handleStopPreview);
+    this.addEventListener('end-preview', this._handleStopPreview); // to be renamed as end-elements-preview
+    this.addEventListener('stop-preview', this._handleGlobalStop); // of all track elements
+    this.addEventListener('resume-preview', this._handleGlobalResume); // of all track elements
+    this.addEventListener('dragged-item-type', this._handleDraggedType);
     this.addEventListener(
       'result-media-preview',
       this._handlePreviewSingleMediaResult
@@ -74,6 +82,20 @@ export class DemoApp extends LitElement {
     if (changedProperties.has('trackElements')) {
       this._makeSequentialRequests();
     }
+  }
+  _handleGlobalResume() {
+    this.resumePlayer = true;
+    this.stopPlayer = false;
+    if (this.resources.length > 0) this.goForLauch = true;
+  }
+  _handleGlobalStop() {
+    this.stopPlayer = true;
+    this.resumePlayer = false;
+    this.goForLauch = false;
+  }
+
+  _handleDraggedType(ev) {
+    this.draggedElementType = ev.detail.draggedElementType;
   }
 
   _handleStartPreview(ev) {
@@ -99,7 +121,7 @@ export class DemoApp extends LitElement {
       this.displayLoadingScreen = false;
     } else if (
       ev.detail.singleMediaPreview.type === 'video' ||
-      ev.detail.singleMediaPreview.type === 'music'
+      ev.detail.singleMediaPreview.type === 'sound'
     ) {
       this.displayLoadingScreen = true;
       this.isSingleMediaPreview = true;
@@ -157,6 +179,7 @@ export class DemoApp extends LitElement {
 
     const getData = Promise.all(
       elementsArray.map(request => {
+        console.warn('request', request);
         const response = this.sequentialRequestMediaByType(request);
         return response;
       })
@@ -182,6 +205,13 @@ export class DemoApp extends LitElement {
         this.getResource,
         request.identificator
       );
+      return response;
+    } else if (
+      request.mediaType === 'video' &&
+      request.trackRef === 'musicTrack1'
+    ) {
+      request.mediaType = 'sound';
+      const response = this.singleVideoRequest(request.identificator);
       return response;
     } else if (request.mediaType === 'video') {
       const response = this.singleVideoRequest(request.identificator);
@@ -222,8 +252,7 @@ export class DemoApp extends LitElement {
   }
 
   _handlePlayMedia(ev) {
-    this.trackElements = [...[], ...ev.detail.trackElements];
-    this.requestUpdate();
+    this.trackElements = [...ev.detail.trackElements];
     console.warn(
       'DEAMO APP: just received these trackElements: ',
       this.trackElements
@@ -235,6 +264,8 @@ export class DemoApp extends LitElement {
       <video-preview
         .singleMediaRequestState=${this.singleMediaRequestState}
         ?displayLoadingScreen=${this.displayLoadingScreen}
+        ?stopPlayer=${this.stopPlayer}
+        ?resumePlayer=${this.resumePlayer}
         .singleMediaPreview=${this.singleMediaPreview}
         .resources=${this.resources}
         .executeSegmentsPreview=${this.playSegments}
@@ -242,7 +273,10 @@ export class DemoApp extends LitElement {
       ></video-preview>
 
       <query-ui></query-ui>
-      <track-editor ?goForLaunch=${this.goForLauch}></track-editor>
+      <track-editor
+        ?goForLaunch=${this.goForLauch}
+        draggedElementType=${this.draggedElementType}
+      ></track-editor>
     `;
   }
 }
