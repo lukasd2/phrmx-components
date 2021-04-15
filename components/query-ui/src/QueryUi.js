@@ -10,8 +10,8 @@ export class QueryUi extends LitElement {
 		return css`
 			result-media {
 				box-shadow: var(--sl-shadow-x-large);
-				margin-top: 40px;
-				height: 60vh;
+				margin-top: 20px;
+				height: 55vh;
 				overflow: hidden;
 			}
 		`;
@@ -138,7 +138,8 @@ export class QueryUi extends LitElement {
 		super.connectedCallback();
 		console.debug('DEBUG: QueryUi successfuly added to the DOM');
 		//this.getDictionariesRequest(this.dictionariesRoute); // FIXME, Demo purposes an example dictionary is
-		this.singleVideoRequest();
+		this.singleVideoRequest('856672'); // added sample request for capra resource
+		this.singleVideoRequest('5979048'); // added sample request for florence resource
 		this.popularVidoesRequest(); // FIXME testing, demo purposes. Get the most popular video segmetns from "pexels"
 		this.addEventListener('search-query-event', this._handleSearchedQuery);
 	}
@@ -147,9 +148,9 @@ export class QueryUi extends LitElement {
 		console.debug('[QueryUI] changed properties: ', changedProperties); // logs previous values
 	}
 
-	async singleVideoRequest() {
+	async singleVideoRequest(id) {
 		const response = await fetch(
-			`${this.singleVideoBaseUrl}/videos/5979048`,
+			`${this.singleVideoBaseUrl}/videos/${id}`,
 			{
 				method: 'GET',
 				headers: {
