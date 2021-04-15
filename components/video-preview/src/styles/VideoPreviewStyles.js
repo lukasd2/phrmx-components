@@ -15,7 +15,8 @@ export const videoPreviewStyles = css`
 
   .videoEditorTitle {
     text-align: center;
-    padding: 1em;
+    padding: 0;
+    margin: 0;
     display: flex;
     flex-direction: row;
     align-items: baseline;
@@ -66,6 +67,18 @@ export const videoPreviewStyles = css`
     visibility: hidden;
   }
 
+  .music-player-container {
+    position: absolute;
+    width: 1000px;
+    height: 1000px;
+    z-index: 20;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .music-player-content {
+    width: 100%;
+    height: 100%;
+  }
   .video-player-content {
     width: 100%;
     height: 100%;

@@ -12,6 +12,8 @@ export class VideoPreview extends LitElement {
       trackElements: { type: Object },
       playedElement: { type: Number },
       resources: { type: Array },
+      stopPlayer: { type: Boolean },
+      resumePlayer: { type: Boolean },
       executeSegmentsPreview: { type: Array },
       terminateSegmentsPreview: { type: Array },
       singleMediaPreview: { type: Object },
@@ -42,6 +44,15 @@ export class VideoPreview extends LitElement {
     //console.debug('changedProperty', changedProperties); // logs previous values
     if (changedProperties.has('resources')) {
       // TODO: this might be a good place to finish loading resources before playing
+      this.displayMediaPreview = false;
+    }
+    if (changedProperties.has('stopPlayer')) {
+      this.stopCurrentlyPlayedMedia();
+      this.stopPlayer = false;
+    }
+    if (changedProperties.has('resumePlayer')) {
+      this.resumeCurrentlyPlayedMedia();
+      this.resumePlayer = false;
     }
     if (changedProperties.has('executeSegmentsPreview')) {
       if (this.executeSegmentsPreview.length > 0) {
@@ -60,11 +71,59 @@ export class VideoPreview extends LitElement {
 
   _startPreview() {
     console.warn('startPreview content', this.executeSegmentsPreview);
-    const playElements = this.playback.querySelector(
-      `.${this.executeSegmentsPreview[0].localRef}`
-    );
-    playElements.style.visibility = 'visible';
-    playElements.style.opacity = 1;
+    if (this.executeSegmentsPreview.length === 1) {
+      const playElements = this.playback.querySelector(
+        `.${this.executeSegmentsPreview[0].localRef}`
+      );
+      if (playElements.classList.contains('video-player-container')) {
+        const existingSource = playElements.querySelector(
+          '.video-player-content'
+        );
+        existingSource.classList.add('currently-on-air');
+
+        existingSource.play();
+      }
+      if (playElements.classList.contains('music-player-container')) {
+        const existingSource = playElements.querySelector(
+          '.music-player-content'
+        );
+        existingSource.classList.add('currently-on-air');
+
+        existingSource.play();
+      }
+      if (playElements.classList.contains('music-player-container')) {
+        return;
+      }
+      playElements.style.visibility = 'visible';
+      playElements.style.opacity = 1;
+    } else if (this.executeSegmentsPreview.length > 1) {
+      this.executeSegmentsPreview.forEach(element => {
+        const playElements = this.playback.querySelector(
+          `.${element.localRef}`
+        );
+        if (playElements.classList.contains('video-player-container')) {
+          const existingSource = playElements.querySelector(
+            '.video-player-content'
+          );
+          existingSource.classList.add('currently-on-air');
+
+          existingSource.play();
+        }
+        if (playElements.classList.contains('music-player-container')) {
+          const existingSource = playElements.querySelector(
+            '.music-player-content'
+          );
+          existingSource.classList.add('currently-on-air');
+
+          existingSource.play();
+        }
+        if (playElements.classList.contains('music-player-container')) {
+          return;
+        }
+        playElements.style.visibility = 'visible';
+        playElements.style.opacity = 1;
+      });
+    }
   }
 
   _endPreview() {
@@ -73,8 +132,44 @@ export class VideoPreview extends LitElement {
     const stopElements = this.playback.querySelector(
       `.${this.terminateSegmentsPreview[0].localRef}`
     );
+
+    if (stopElements.classList.contains('video-player-container')) {
+      const existingSource = stopElements.querySelector(
+        '.video-player-content'
+      );
+      existingSource.classList.remove('currently-on-air');
+
+      existingSource.pause();
+    }
+    if (stopElements.classList.contains('music-player-container')) {
+      const existingSource = stopElements.querySelector(
+        '.music-player-content'
+      );
+      existingSource.classList.remove('currently-on-air');
+
+      existingSource.pause();
+    }
+
     stopElements.style.visibility = 'hidden';
     stopElements.style.opacity = 0;
+  }
+
+  stopCurrentlyPlayedMedia() {
+    const currentlyOnAir = this.shadowRoot.querySelectorAll(
+      '.currently-on-air'
+    );
+    Array.from(currentlyOnAir).forEach(element => {
+      element.pause();
+    });
+    console.warn('currentlyOnAir', currentlyOnAir);
+  }
+  resumeCurrentlyPlayedMedia() {
+    const currentlyOnAir = this.shadowRoot.querySelectorAll(
+      '.currently-on-air'
+    );
+    Array.from(currentlyOnAir).forEach(element => {
+      element.play();
+    });
   }
 
   _updateBoardPreview() {
@@ -109,28 +204,38 @@ export class VideoPreview extends LitElement {
     }
     // solution to a common issue with HTML video player, that allows for dynamically replace source of currently playing video
     // TODO: same solution for music-player
-    if (this.shadowRoot.querySelector('.video-player-content')) {
-      const existingPlayer = this.shadowRoot.querySelector(
-        '.video-player-content'
-      );
-      const existingSource = this.shadowRoot.querySelector(
-        '.video-player__source'
-      );
-      existingPlayer.pause();
-      existingSource.src = this.singleMediaPreview.video_files[0].link;
-      existingPlayer.load();
-    }
+    this.stopCurrentPlayerAndLoadNewSource();
+
     if (this.singleMediaPreview.type === 'video') {
       return html` ${this.composeSingleVideoLayer(
         this.singleMediaPreview.video_files[0].link,
         this.singleMediaPreview.id
       )}`;
     }
-    if (this.singleMediaPreview.type === 'music') {
+    if (this.singleMediaPreview.type === 'sound') {
       return html` ${this.composeSingleMusicLayer(
         this.singleMediaPreview.video_files[0].link,
         this.singleMediaPreview.id
       )}`;
+    }
+  }
+
+  stopCurrentPlayerAndLoadNewSource() {
+    let existingPlayer;
+    let existingSource;
+
+    if (this.shadowRoot.querySelector('.video-player-content')) {
+      existingPlayer = this.shadowRoot.querySelector('.video-player-content');
+      existingSource = this.shadowRoot.querySelector('.video-player__source');
+    } else if (this.shadowRoot.querySelector('.music-player-content')) {
+      existingPlayer = this.shadowRoot.querySelector('.music-player-content');
+      existingSource = this.shadowRoot.querySelector('.music-player__source');
+    }
+    if (existingPlayer) {
+      existingPlayer.pause();
+      existingSource.src = this.singleMediaPreview.video_files[0].link;
+      existingPlayer.load();
+      existingPlayer.play();
     }
   }
 
@@ -151,7 +256,7 @@ export class VideoPreview extends LitElement {
       class="video-player-container ${id}"
       style="visibility: visible; opacity: 1"
     >
-      <video class="video-player-content" preload="auto" autoplay>
+      <video class="video-player-content" preload="auto" autoplay controls>
         <source
           id="${id}"
           class="video-player__source"
@@ -163,12 +268,14 @@ export class VideoPreview extends LitElement {
   }
 
   composeSingleMusicLayer(url, id) {
-    return html` ${this.composeSingleImageLayer(url)}
+    return html` ${this.composeSingleImageLayer(
+        'https://img.icons8.com/fluent/512/000000/audio-wave.png'
+      )}
       <div
         class="music-player-container"
         style="visibility: hidden; opacity: 0"
       >
-        <video class="music-player-content" preload="auto" autoplay>
+        <video class="music-player-content" preload="auto" autoplay controls>
           <source
             id="${id}"
             class="music-player__source"
@@ -190,7 +297,7 @@ export class VideoPreview extends LitElement {
 
   composeVideoLayer(url, ref) {
     return html` <div class="video-player-container ${ref}">
-      <video class="video-player-content" preload="auto" autoplay>
+      <video class="video-player-content" preload="auto">
         <source
           id="${ref}"
           class="video-player__source"
@@ -202,9 +309,17 @@ export class VideoPreview extends LitElement {
   }
 
   composeMusicLayer(url, ref) {
-    return html` <div class="video-player-container" ${ref}">
-      <video class="video-player-content" preload="auto" autoplay>
-        <source src=${url} type="video/mp4" />
+    return html` <div
+      class="music-player-container ${ref}"
+      style="visibility: hidden; opacity: 0"
+    >
+      <video class="music-player-content" preload="auto">
+        <source
+          id="${ref}"
+          class="music-player__source"
+          src=${url}
+          type="video/mp4"
+        />
       </video>
     </div>`;
   }
@@ -220,7 +335,7 @@ export class VideoPreview extends LitElement {
           return html`
             ${this.composeVideoLayer(res.video_files[0].link, res.localRef)}
           `;
-        } else if (res.mediaType === 'music') {
+        } else if (res.mediaType === 'sound') {
           return html`
             ${this.composeMusicLayer(res.video_files[0].link, res.localRef)}
           `;
