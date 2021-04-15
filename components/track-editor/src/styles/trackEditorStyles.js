@@ -8,6 +8,12 @@ export const trackEditorStyles = css`
     --zoom-factor: 0px;
   }
 
+  .track-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
   .timer-controls {
     font-size: 1.5rem;
     width: 50%;
@@ -59,12 +65,14 @@ export const trackEditorStyles = css`
     display: flex;
     flex-direction: column;
     width: 50px;
-    justify-content: end;
     align-items: center;
   }
 
   .tracks-info .track-type {
-    height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 50%;
   }
 
   .video-track {

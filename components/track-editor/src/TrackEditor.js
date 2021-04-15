@@ -33,6 +33,7 @@ export class TrackEditor extends LitElement {
       numberOfTrackElements: { type: Number },
       segmentsOnTracks: { type: Array },
       goForLaunch: { type: Boolean },
+      hasTrackStateChanged: { type: Boolean },
       draggedElementType: { type: String },
     };
   }
@@ -65,6 +66,7 @@ export class TrackEditor extends LitElement {
     this.startingPreviews = [];
     this.endingPreviews = [];
     this.goForLaunch = false;
+    this.hasTrackStateChanged = false;
     this.draggedElementType = '';
   }
 
@@ -342,6 +344,7 @@ export class TrackEditor extends LitElement {
     ev.currentTarget.appendChild(timeSegment);
     this.incrementNumberOfTrackElements();
     this.allTracksElements.push(timeSegment);
+    this.hasTrackStateChanged = true;
 
     const trackElement = this.createObjectForPreviewRequest(timeSegment);
     this.trackElements[currentTrackId].elements.push(trackElement);
@@ -525,8 +528,13 @@ export class TrackEditor extends LitElement {
   }
 
   _handleTimePlay() {
-    this.dispatchEventForPreview();
-    if (this.goForLaunch === true) this.secondsCounter(true);
+    if (this.hasTrackStateChanged === false) {
+      this.dispatchResumePreview();
+    } else {
+      this.hasTrackStateChanged = false;
+      this.dispatchEventForPreview();
+    }
+    //if (this.goForLaunch === true) this.secondsCounter(true); TODO: to be verified futher
   }
 
   orderElementsByStartDate() {
@@ -579,14 +587,25 @@ export class TrackEditor extends LitElement {
 
   _handleTimeStop() {
     this.goForLaunch = false;
-    this.dispatchStopPreview();
     this.secondsCounter(false, true);
+    this.dispatchStopPreview();
+  }
+
+  dispatchResumePreview() {
+    const event = new CustomEvent('resume-preview', {
+      detail: {
+        resumeMedia: true,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   dispatchStopPreview() {
     const event = new CustomEvent('stop-preview', {
       detail: {
-        goForLaunch: false,
+        stopMedia: true,
       },
       bubbles: true,
       composed: true,
@@ -758,6 +777,7 @@ export class TrackEditor extends LitElement {
       const _stopMoving = () => {
         //this.findCollisions(timeSegment); // TODO: to implement, https://stackoverflow.com/questions/47667827/javascript-check-numeric-range-overlapping-in-array
         this.updateTimeSegmentAttributes(timeSegment);
+        this.hasTrackStateChanged = true;
         if (timeSegment.classList.contains('inMotion'));
         timeSegment.classList.remove('inMotion');
 
@@ -912,46 +932,48 @@ export class TrackEditor extends LitElement {
 
   render() {
     return html`
-      <div class="timer-controls">
-        <sl-tooltip content="Riproduci">
-          <sl-icon-button
-            class="timer-button timer__play"
-            name="play-circle"
-            label="Riproduci"
-            @click=${this._handleTimePlay}
-          ></sl-icon-button>
-        </sl-tooltip>
-        <sl-tooltip content="Metti in pausa">
-          <sl-icon-button
-            class="timer-button timer__pause"
-            name="pause-circle"
-            label="Metti in pausa"
-            @click=${this._handleTimeStop}
-          ></sl-icon-button>
-        </sl-tooltip>
-        <div class="timer-container">
-          <span>${this.formatTimeFromHoundreths(this.actualTime)}</span>
+      <div class="track-controls">
+        <div>
+          <input
+            type="range"
+            id="zoom"
+            name="zoom"
+            min="10"
+            max="100"
+            value="100"
+            @input=${this._handleZoom}
+          />
+          <label for="zoom">Zoom</label>
         </div>
-        <sl-tooltip content="Riproduci dall'inzio">
-          <sl-icon-button
-            class="timer-button timer__restart"
-            name="arrow-repeat"
-            label="Riproduci dall'inzio"
-            @click=${this._handleTimeReset}
-          ></sl-icon-button>
-        </sl-tooltip>
-      </div>
-      <div>
-        <input
-          type="range"
-          id="zoom"
-          name="zoom"
-          min="10"
-          max="100"
-          value="100"
-          @input=${this._handleZoom}
-        />
-        <label for="zoom">Zoom</label>
+        <div class="timer-controls">
+          <sl-tooltip content="Riproduci">
+            <sl-icon-button
+              class="timer-button timer__play"
+              name="play-circle"
+              label="Riproduci"
+              @click=${this._handleTimePlay}
+            ></sl-icon-button>
+          </sl-tooltip>
+          <sl-tooltip content="Metti in pausa">
+            <sl-icon-button
+              class="timer-button timer__pause"
+              name="pause-circle"
+              label="Metti in pausa"
+              @click=${this._handleTimeStop}
+            ></sl-icon-button>
+          </sl-tooltip>
+          <div class="timer-container">
+            <span>${this.formatTimeFromHoundreths(this.actualTime)}</span>
+          </div>
+          <sl-tooltip content="Riproduci dall'inzio">
+            <sl-icon-button
+              class="timer-button timer__restart"
+              name="arrow-repeat"
+              label="Riproduci dall'inzio"
+              @click=${this._handleTimeReset}
+            ></sl-icon-button>
+          </sl-tooltip>
+        </div>
       </div>
       <section class="tracks">
         <div class="tracks-info">
