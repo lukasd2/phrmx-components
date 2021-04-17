@@ -179,7 +179,6 @@ export class DemoApp extends LitElement {
 
     const getData = Promise.all(
       elementsArray.map(request => {
-        console.warn('request', request);
         const response = this.sequentialRequestMediaByType(request);
         return response;
       })
@@ -194,7 +193,7 @@ export class DemoApp extends LitElement {
           }
         });
       });
-      this.resources = [...this.resources, ...mergedArray];
+      this.resources = [...mergedArray];
       this.goForLauch = true;
     });
   };
@@ -253,6 +252,8 @@ export class DemoApp extends LitElement {
 
   _handlePlayMedia(ev) {
     this.trackElements = [...ev.detail.trackElements];
+    this.stopPlayer = false;
+    this.resumePlayer = true;
     console.warn(
       'DEAMO APP: just received these trackElements: ',
       this.trackElements
