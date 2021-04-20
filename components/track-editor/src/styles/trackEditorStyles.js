@@ -215,10 +215,10 @@ export const trackEditorStyles = css`
     position: absolute;
     user-select: none;
     background: rgba(255, 255, 255, 0.7);
-    width: 30px;
+    width: 25px;
     height: 75%;
     top: 0px;
-    left: 5px;
+    left: 0px;
     cursor: w-resize;
     margin: auto;
     bottom: 0px;
@@ -227,10 +227,10 @@ export const trackEditorStyles = css`
     position: absolute;
     background: rgba(255, 255, 255, 0.7);
     user-select: none;
-    width: 30px;
+    width: 25px;
     height: 75%;
     top: 0px;
-    right: 5px;
+    right: 0px;
     cursor: w-resize;
     margin: auto;
     bottom: 0px;

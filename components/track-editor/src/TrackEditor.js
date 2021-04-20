@@ -687,22 +687,22 @@ export class TrackEditor extends LitElement {
         } else if (resizeRight) {
           width = original_width + (ev.pageX - original_mouse_pos);
         }
-        // Make resize with left or right resizer element
         if (width > minimumSize) {
-          timeSegment.style.width = width + 'px';
-
           if (resizeLeft) {
             const startX = timeSegment.offsetLeft + 50;
 
             const mouseX = ev.pageX;
             const translateXValue = mouseX - startX + track.scrollLeft;
-            if (translateXValue >= 0) {
+            if (translateXValue >= 0 && ev.pageX > 50) {
+              // FIXME hardcoded left margin.
               let fn = this.generateScaleFunction(
                 0,
                 this.timeSegmentWidth,
                 0,
                 500
               );
+              timeSegment.style.width = width + 'px';
+
               timeSegment.style.transform =
                 'translateX(' + translateXValue + 'px)';
               timeSegment.setAttribute('datax', translateXValue);
@@ -717,6 +717,7 @@ export class TrackEditor extends LitElement {
               timeSegment.setAttribute('duration', noDecimalsScaledWidth);
             }
           } else if (resizeRight) {
+            timeSegment.style.width = width + 'px';
             timeSegment.setAttribute(
               'time-end',
               this.formatTimeFromHoundreths(scale(Number(width)))
@@ -732,6 +733,9 @@ export class TrackEditor extends LitElement {
       const _stopResize = () => {
         if (timeSegment.classList.contains('inMotion'));
         timeSegment.classList.remove('inMotion');
+
+        this.updateTimeSegmentAttributes(timeSegment);
+        this.hasTrackStateChanged = true;
 
         this.shadowRoot.removeEventListener(
           'mousemove',
