@@ -41,10 +41,10 @@ export class VideoPreview extends LitElement {
   }
 
   updated(changedProperties) {
-    //console.debug('changedProperty', changedProperties); // logs previous values
     if (changedProperties.has('resources')) {
       // TODO: this might be a good place to finish loading resources before playing
       this.displayMediaPreview = false;
+      this.updateTemplateRefs();
     }
     if (changedProperties.has('stopPlayer')) {
       this.stopCurrentlyPlayedMedia();
@@ -68,31 +68,45 @@ export class VideoPreview extends LitElement {
       this._updateBoardPreview();
     }
   }
-
+  updateTemplateRefs() {
+    const currentlyOnAir = this.shadowRoot.querySelectorAll(
+      '.currently-on-air'
+    );
+    Array.from(currentlyOnAir).forEach(element => {
+      element.pause();
+      element.parentNode.style.visibility = 'hidden';
+      element.parentNode.style.opacity = 0;
+    });
+  }
   _startPreview() {
     console.warn('startPreview content', this.executeSegmentsPreview);
     if (this.executeSegmentsPreview.length === 1) {
       const playElements = this.playback.querySelector(
         `.${this.executeSegmentsPreview[0].localRef}`
       );
-      if (playElements.classList.contains('video-player-container')) {
-        const existingSource = playElements.querySelector(
-          '.video-player-content'
-        );
-        existingSource.classList.add('currently-on-air');
+      console.warn('this is play element', playElements);
+      if (playElements) {
+        if (playElements.classList.contains('video-player-container')) {
+          const existingSource = playElements.querySelector(
+            '.video-player-content'
+          );
+          existingSource.classList.add('currently-on-air');
 
-        existingSource.play();
-      }
-      if (playElements.classList.contains('music-player-container')) {
-        const existingSource = playElements.querySelector(
-          '.music-player-content'
-        );
-        existingSource.classList.add('currently-on-air');
+          existingSource.load();
 
-        existingSource.play();
-      }
-      if (playElements.classList.contains('music-player-container')) {
-        return;
+          existingSource.play();
+        }
+        if (playElements.classList.contains('music-player-container')) {
+          const existingSource = playElements.querySelector(
+            '.music-player-content'
+          );
+          existingSource.classList.add('currently-on-air');
+
+          existingSource.play();
+        }
+        if (playElements.classList.contains('music-player-container')) {
+          return;
+        }
       }
       playElements.style.visibility = 'visible';
       playElements.style.opacity = 1;
@@ -161,7 +175,6 @@ export class VideoPreview extends LitElement {
     Array.from(currentlyOnAir).forEach(element => {
       element.pause();
     });
-    console.warn('currentlyOnAir', currentlyOnAir);
   }
   resumeCurrentlyPlayedMedia() {
     const currentlyOnAir = this.shadowRoot.querySelectorAll(
@@ -296,7 +309,11 @@ export class VideoPreview extends LitElement {
   }
 
   composeVideoLayer(url, ref) {
-    return html` <div class="video-player-container ${ref}">
+    return html` <div
+      id="${ref}"
+      class="video-player-container ${ref}"
+      style="visibility: hidden; opacity: 0"
+    >
       <video class="video-player-content" preload="auto">
         <source
           id="${ref}"
