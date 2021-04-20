@@ -54,6 +54,8 @@ export const resultMediaStyles = css`
     overflow: hidden;
     border-radius: 10px;
     box-sizing: border-box;
+    touch-action: none;
+    user-select: none;
   }
 
   .thumbnail-element.loading {
