@@ -133,7 +133,8 @@ export class ResultMedia extends LitElement {
             <sl-tooltip>
               <div slot="content">
                 Titolo: <strong>${answer.film_name}</strong><br />
-                Tipo: <em>${answer.media_type}</em>
+                Tipo: <em>${answer.media_type}</em> <br />
+                Durata: <em>${answer.duration}</em> secondi
               </div>
               <sl-card class="card-image">
                 <img
