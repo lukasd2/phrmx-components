@@ -149,6 +149,7 @@ export class TrackEditor extends LitElement {
   dispatchEventForPreview() {
     this.orderElementsByStartDate();
     this.makePreviewController();
+    console.warn('TrackEditor: dispatchEventForPreview', this.segmentsOnTracks);
     const event = new CustomEvent('track-elements', {
       detail: {
         trackElements: this.segmentsOnTracks,
@@ -344,7 +345,9 @@ export class TrackEditor extends LitElement {
     ev.currentTarget.appendChild(timeSegment);
     this.incrementNumberOfTrackElements();
     this.allTracksElements.push(timeSegment);
+
     this.hasTrackStateChanged = true;
+    this._handleTimeStop();
 
     const trackElement = this.createObjectForPreviewRequest(timeSegment);
     this.trackElements[currentTrackId].elements.push(trackElement);
@@ -462,12 +465,16 @@ export class TrackEditor extends LitElement {
       this.clockOpts.interval = setInterval(clockRunning, 10);
     };
     const stop = () => {
-      this.clockOpts.timeStopped = new Date();
-      clearInterval(this.clockOpts.interval);
+      if (this.clockOpts.interval) {
+        this.clockOpts.timeStopped = new Date();
+        clearInterval(this.clockOpts.interval);
+        this.clockOpts.interval = undefined;
+      }
     };
 
     const reset = () => {
       clearInterval(this.clockOpts.interval);
+      this.clockOpts.interval = undefined;
       this.clockOpts.stoppedDuration = 0;
       this.clockOpts.timeBegan = null;
       this.clockOpts.timeStopped = null;
@@ -534,7 +541,6 @@ export class TrackEditor extends LitElement {
       this.hasTrackStateChanged = false;
       this.dispatchEventForPreview();
     }
-    //if (this.goForLaunch === true) this.secondsCounter(true); TODO: to be verified futher
   }
 
   orderElementsByStartDate() {
@@ -615,7 +621,10 @@ export class TrackEditor extends LitElement {
 
   _handleTimeReset() {
     this.goForLaunch = false;
+    this.orderElementsByStartDate();
+    this.makePreviewController();
     this.secondsCounter(false, false, true);
+    this.dispatchStopPreview();
   }
 
   _handleZoom(ev) {
@@ -674,9 +683,6 @@ export class TrackEditor extends LitElement {
         );
 
         if (resizeLeft) {
-          const startX = timeSegment.offsetLeft + 50;
-          const mouseX = ev.pageX;
-
           width = original_width - (ev.pageX - original_mouse_pos);
         } else if (resizeRight) {
           width = original_width + (ev.pageX - original_mouse_pos);
