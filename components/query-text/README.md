@@ -44,6 +44,14 @@ npm i query-text
 }
 ```
 
+Search components has the following list of dependencies:
+• Fuse.js [https://fusejs.io/], version: 6.4.6
+o Limited to: Fuse.js Basic build version [https://fusejs.io/getting-started/different-builds.html]
+• Lodash [https://lodash.com/], version: 4.17.15
+o Limited to debounce method [https://lodash.com/docs/4.17.15#debounce]
+• Shoelace [https://shoelace.style/], version: 2.0.0-beta.39
+o Limited to components: Button [https://shoelace.style/components/button] and Icon [https://shoelace.style/components/icon]
+
 -   Returns an event "searchedQuery" with the searched query text
 
 ```javascript
