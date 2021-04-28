@@ -221,13 +221,13 @@ export class VideoPreview extends LitElement {
 
     if (this.singleMediaPreview.type === 'video') {
       return html` ${this.composeSingleVideoLayer(
-        this.singleMediaPreview.video_files[0].link,
+        this.singleMediaPreview.url,
         this.singleMediaPreview.id
       )}`;
     }
     if (this.singleMediaPreview.type === 'sound') {
       return html` ${this.composeSingleMusicLayer(
-        this.singleMediaPreview.video_files[0].link,
+        this.singleMediaPreview.url,
         this.singleMediaPreview.id
       )}`;
     }
@@ -246,7 +246,7 @@ export class VideoPreview extends LitElement {
     }
     if (existingPlayer) {
       existingPlayer.pause();
-      existingSource.src = this.singleMediaPreview.video_files[0].link;
+      existingSource.src = this.singleMediaPreview.url;
       existingPlayer.load();
       existingPlayer.play();
     }
@@ -349,13 +349,9 @@ export class VideoPreview extends LitElement {
             ${this.composeImageLayer(res.download_url, res.localRef)}
           `;
         } else if (res.mediaType === 'video') {
-          return html`
-            ${this.composeVideoLayer(res.video_files[0].link, res.localRef)}
-          `;
+          return html` ${this.composeVideoLayer(res.url, res.localRef)} `;
         } else if (res.mediaType === 'sound') {
-          return html`
-            ${this.composeMusicLayer(res.video_files[0].link, res.localRef)}
-          `;
+          return html` ${this.composeMusicLayer(res.url, res.localRef)} `;
         }
       });
       return html`${generatedTemplate}`;
