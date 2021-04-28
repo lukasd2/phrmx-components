@@ -138,14 +138,19 @@ export const resultMediaStyles = css`
     background-color: violet;
   }
 
-  .card-image sl-icon-button::part(base) {
+  .card-image .metadata-preview-btn::part(base) {
+    color: var(--sl-color-gray-100);
+    background: var(--sl-color-primary-500);
+  }
+
+  .card-image .play-preview-btn::part(base) {
     color: var(--sl-color-gray-100);
     background: var(--sl-color-primary-700);
   }
 
   .image-thumbnail {
-    width: 8rem;
-    height: 8rem;
+    width: 9rem;
+    height: 7rem;
     max-height: 100%;
     min-width: 100%;
     object-fit: cover;
