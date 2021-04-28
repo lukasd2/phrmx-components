@@ -11,6 +11,7 @@ export class ResultMedia extends LitElement {
       answerSet: { type: Array },
       isLoading: { type: Boolean },
       headerTitle: { type: String },
+      metadataResponse: { type: Object },
     };
   }
 
@@ -76,7 +77,7 @@ export class ResultMedia extends LitElement {
   }
 
   _emitPreviewData(ev) {
-    if (ev.target.tagName === 'SL-ICON-BUTTON') {
+    if (ev.target.classList.contains('play-preview-btn')) {
       const thumbnailElement = ev.currentTarget;
       const thumbnailElementId = thumbnailElement.getAttribute(
         'data-reference'
@@ -100,7 +101,25 @@ export class ResultMedia extends LitElement {
         composed: true,
       });
       this.dispatchEvent(event);
+    } else if (ev.target.classList.contains('metadata-preview-btn')) {
+      const parentRef = ev.target.getAttribute('parent-ref');
+      const dialog = this.shadowRoot.querySelector('.dialog-overview');
+      dialog.show();
+      this._emitMetadataRequest(parentRef);
+      const closeButton = dialog.querySelector('sl-button[slot="footer"]');
+      closeButton.addEventListener('click', () => dialog.hide());
     }
+  }
+
+  _emitMetadataRequest(parentRef) {
+    const event = new CustomEvent('metadata-request', {
+      detail: {
+        metadataRequest: parentRef,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   composeHeaderTemplate = headerTitle => {
@@ -146,6 +165,13 @@ export class ResultMedia extends LitElement {
                 <div class="card-content ${answer.media_type}">
                   <sl-badge>${answer.media_type}</sl-badge>
                   <sl-icon-button
+                    class="metadata-preview-btn"
+                    parent-ref=${answer.film_id}
+                    name="info-circle"
+                    label="Dettagli"
+                  ></sl-icon-button>
+                  <sl-icon-button
+                    class="play-preview-btn"
                     name="play-circle"
                     label="Riproduci"
                   ></sl-icon-button>
@@ -183,6 +209,18 @@ export class ResultMedia extends LitElement {
         ${this.answerSet ? html` ${this.composeThumbnailsTemplate()} ` : ''}
         ${this.isLoading ? html` ${this.composeSkeletonThumbnails()} ` : ''}
         <slot name="searchInProgress"></slot>
-      </ul>`;
+      </ul>
+      <sl-dialog
+        label="Metadati sulla fonte di provenienza"
+        class="dialog-overview"
+      >
+        <p><em>Titolo del film:</em> ${this.metadataResponse.phx_title}</p>
+        <p><em>Identificativo:</em> ${this.metadataResponse.id}</p>
+        <p><em>Prodotto in:</em> ${this.metadataResponse.phx_country}</p>
+        <p><em>Diretto da:</em> ${this.metadataResponse.phx_director}</p>
+        <p><em>Anno di produzione:</em> ${this.metadataResponse.phx_year}</p>
+
+        <sl-button slot="footer" type="primary">Close</sl-button>
+      </sl-dialog>`;
   }
 }
