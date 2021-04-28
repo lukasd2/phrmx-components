@@ -125,11 +125,40 @@ export class DemoApp extends LitElement {
     ) {
       this.displayLoadingScreen = true;
       this.isSingleMediaPreview = true;
-
-      await this.singleVideoRequest(ev.detail.singleMediaPreview.id);
+      //await this.singleVideoRequest(ev.detail.singleMediaPreview.id); // general purpose app - PEXELS
+      await this.singleLocalVideoRequest(ev.detail.singleMediaPreview.id);
       this.isSingleMediaPreview = false;
       this.displayLoadingScreen = false;
     }
+  }
+
+  async singleLocalVideoRequest(id) {
+    const response = await fetch(`http://localhost:3000/segments/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      this.displayLoadingScreen = false;
+      this.updateLoadingSingleMediaState('loadingMedia', false);
+      this.updateLoadingSingleMediaState('errorState', 404);
+      throw new Error(
+        `'Network response: ${response.blob()} from: ${this.singleVideoBaseUrl}`
+      );
+    }
+
+    const jsonResponse = await response.json();
+    console.debug(
+      `DEBUG: Async data from http://localhost:3000/segments/${id} has arrived:`,
+      jsonResponse
+    );
+    if (this.isSingleMediaPreview) {
+      this.singleMediaPreview = jsonResponse; // this is the key line
+      this.singleMediaPreview.type = 'video';
+      this.updateLoadingSingleMediaState('loadingMedia', false);
+    }
+    return jsonResponse;
   }
 
   async singleVideoRequest(id) {
@@ -210,10 +239,10 @@ export class DemoApp extends LitElement {
       request.trackRef === 'musicTrack1'
     ) {
       request.mediaType = 'sound';
-      const response = this.singleVideoRequest(request.identificator);
+      const response = this.singleLocalVideoRequest(request.identificator);
       return response;
     } else if (request.mediaType === 'video') {
-      const response = this.singleVideoRequest(request.identificator);
+      const response = this.singleLocalVideoRequest(request.identificator);
       return response;
     }
   }
