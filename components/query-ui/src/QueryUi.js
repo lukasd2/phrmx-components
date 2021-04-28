@@ -24,6 +24,7 @@ export class QueryUi extends LitElement {
 			searchResults: { type: Array },
 			dictionaries: { type: Object },
 			isLoading: { type: Boolean },
+			metadataResponse: { type: Object },
 		};
 	}
 
@@ -35,6 +36,7 @@ export class QueryUi extends LitElement {
 		this.dictionariesRoute = `dictionaries.json?${config.apiKey}`; // not hiding keys for demo/testing purposes
 		this.searchRoute = `answerset.json?${config.apiKey}`;
 		this.isLoading = false;
+		this.metadataResponse = {};
 		this.dictionaries = {
 			'@': [
 				'Valerio Ciriaci',
@@ -137,15 +139,63 @@ export class QueryUi extends LitElement {
 	connectedCallback() {
 		super.connectedCallback();
 		console.debug('DEBUG: QueryUi successfuly added to the DOM');
-		//this.getDictionariesRequest(this.dictionariesRoute); // FIXME, Demo purposes an example dictionary is
-		this.singleVideoRequest('856672'); // added sample request for capra resource
-		this.singleVideoRequest('5979048'); // added sample request for florence resource
-		this.popularVidoesRequest(); // FIXME testing, demo purposes. Get the most popular video segmetns from "pexels"
+		// this.getDictionariesRequest(this.dictionariesRoute); // FIXME, Demo purposes an example dictionary is
+		this.localVideoRequest(); // seminario demo
+		// this.popularVidoesRequest(); // FIXME testing, demo purposes. Get the most popular video segmetns from "pexels"
 		this.addEventListener('search-query-event', this._handleSearchedQuery);
+		this.addEventListener('metadata-request', this._handleMetadataRequest);
 	}
 
 	updated(changedProperties) {
 		console.debug('[QueryUI] changed properties: ', changedProperties); // logs previous values
+	}
+
+	async localVideoRequest() {
+		const response = await fetch(`http://localhost:3000/answerSet`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+		if (!response.ok) {
+			throw new Error(
+				`'Network response: ${response.blob()} from: ${
+					this.singleVideoBaseUrl
+				}`
+			);
+		}
+
+		const jsonResponse = await response.json();
+		console.debug(
+			`DEBUG: Async data from http://localhost:3000/answerSet has arrived:`,
+			jsonResponse
+		);
+
+		const constructedSampleArray = this.extractAndConstructDataForSeminario(
+			jsonResponse
+		);
+
+		// immutability data pattern used to update LitElement lifecycle (https://open-wc.org/guides/knowledge/lit-element/rendering/#litelements-property-system)
+		this.searchResults = [...this.searchResults, ...constructedSampleArray];
+		return jsonResponse;
+	}
+
+	extractAndConstructDataForSeminario(jsonResponse) {
+		let arrayOfVideos = [];
+		console.warn('jsonResponse', jsonResponse);
+		const data = jsonResponse;
+		data.forEach(element => {
+			arrayOfVideos.push({
+				thumbnail_url: `/assets/thumbnail/${element.id}.jpeg`,
+				film_name: element.film_name,
+				film_id: element.film_id,
+				media_type: 'video',
+				duration: element.duration,
+				reference: element.id,
+			});
+		});
+
+		return arrayOfVideos;
 	}
 
 	async singleVideoRequest(id) {
@@ -231,6 +281,36 @@ export class QueryUi extends LitElement {
 			});
 		}
 		return arrayOfVideos;
+	}
+
+	async _handleMetadataRequest(ev) {
+		console.warn(ev.detail.metadataRequest);
+		const metadataSourceId = ev.detail.metadataRequest;
+		await this.metadataRequest(metadataSourceId);
+	}
+
+	async metadataRequest(metadataSourceId) {
+		const response = await fetch(
+			`http://localhost:3000/metadataSet/${metadataSourceId}`,
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			}
+		);
+		if (!response.ok) {
+			throw new Error(
+				`'Network response: ${response.blob()} from: http://localhost:3000/metadataSet/${metadataSourceId}`
+			);
+		}
+		const jsonResponse = await response.json();
+		console.debug(
+			`DEBUG: Async data from http://localhost:3000/segments/${metadataSourceId} has arrived:`,
+			jsonResponse
+		);
+		this.metadataResponse = jsonResponse;
+		return jsonResponse;
 	}
 
 	disconnectedCallback() {
@@ -323,6 +403,7 @@ export class QueryUi extends LitElement {
 			</query-text>
 			<result-media
 				.answerSet=${this.searchResults}
+				.metadataResponse=${this.metadataResponse}
 				?isLoading=${this.isLoading}
 				headerTitle="Esplora i contenuti"
 			>
