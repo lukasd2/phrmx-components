@@ -107,7 +107,10 @@ export class ResultMedia extends LitElement {
       dialog.show();
       this._emitMetadataRequest(parentRef);
       const closeButton = dialog.querySelector('sl-button[slot="footer"]');
-      closeButton.addEventListener('click', () => dialog.hide());
+      closeButton.addEventListener('click', () => {
+        dialog.hide();
+        this.metadataResponse = [];
+      });
     }
   }
 
