@@ -56,6 +56,7 @@ export const resultMediaStyles = css`
     box-sizing: border-box;
     touch-action: none;
     user-select: none;
+    max-height: 170px;
   }
 
   .thumbnail-element.loading {
