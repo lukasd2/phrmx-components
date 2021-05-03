@@ -10,8 +10,8 @@ export class QueryUi extends LitElement {
 		return css`
 			result-media {
 				box-shadow: var(--sl-shadow-x-large);
-				margin-top: 20px;
-				height: 55vh;
+				margin-top: 10px;
+				height: 50vh;
 				overflow: hidden;
 			}
 		`;
