@@ -30,7 +30,7 @@ export class QueryText extends LitElement {
 		super();
 		this.placeholderText = 'Search for anything...';
 		this.textInput = '';
-		this.mintextInputLenght = 2;
+		this.mintextInputLenght = 0;
 		this.maxAutocompleteSuggestions = 10;
 		this.dictionaries = {
 			'@': [
