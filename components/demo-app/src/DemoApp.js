@@ -206,8 +206,8 @@ export class DemoApp extends LitElement {
       );
       return response;
     } else if (
-      request.mediaType === 'video' &&
-      request.trackRef === 'musicTrack1'
+      (request.mediaType === 'video' && request.trackRef === 'musicTrack1') ||
+      request.mediaType === 'sound'
     ) {
       request.mediaType = 'sound';
       const response = this.singleVideoRequest(request.identificator);
