@@ -38,30 +38,15 @@ export class QueryUi extends LitElement {
 		this.searchRoute = `answerSet`;
 		this.isLoading = false;
 		this.metadataResponse = {};
-		this.dictionaries = {
-			'@': [
-				'Valerio Ciriaci',
-				'Alessio Genovese',
-				'Paola Rossi',
-				'Lilly Wachowski',
-			],
-			'title:': [
-				'Mister Wonderland',
-				'L’ultima frontiera',
-				'Storie di Valerio',
-				'Matrix',
-			],
-			'nationality:': ['Russia', 'Indonesia', 'Italia', 'Stati Uniti'],
-		};
+		this.dictionaries = {};
 		this.searchResults = [];
 	}
 
 	connectedCallback() {
 		super.connectedCallback();
 		console.debug('DEBUG: QueryUi successfuly added to the DOM');
-		//this.getDictionariesRequest(this.dictionariesRoute);
+		//this.getDictionariesRequest(this.dictionariesRoute); // not using dictionaries for seminario demo
 		this.localContentRequest(this.localVideosBaseUrl); // seminario demo
-		this.localContentRequest(this.localAudiosBaseUrl); // seminario demo
 		this.addEventListener('search-query-event', this._handleSearchedQuery);
 		this.addEventListener('metadata-request', this._handleMetadataRequest);
 	}
@@ -105,7 +90,7 @@ export class QueryUi extends LitElement {
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				//body: JSON.stringify(data),
+				//body: JSON.stringify(data), // query string search in json-server is a get with appended params 
 			}
 		);
 		if (!response.ok) {
