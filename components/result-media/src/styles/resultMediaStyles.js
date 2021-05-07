@@ -149,6 +149,13 @@ export const resultMediaStyles = css`
     background: var(--sl-color-primary-700);
   }
 
+  .dialog-overview .metadata-field {
+    border: 1px solid #ddd;
+    padding: 5px;
+    display: inline-flex;
+    font-style: italic;
+  }
+
   .image-thumbnail {
     width: 9rem;
     height: 7rem;
