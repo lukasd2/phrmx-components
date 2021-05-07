@@ -120,6 +120,7 @@ export class TrackEditor extends LitElement {
           this.triggerStartPreview(startPlayingObjects);
         }
       }
+
       if (this.endingPreviews[0]) {
         // TODO: branch if multiple elements ends on same time
         if (this.actualTime + 0.1 >= this.endingPreviews[0].end) {
@@ -321,7 +322,7 @@ export class TrackEditor extends LitElement {
         this.formatTimeFromHoundreths(trackObject.timeEnd)
       );
     } else {
-      trackObject.timeStart = Number(trackObject.timeEnd) + 1;
+      trackObject.timeStart = Number(trackObject.timeEnd);
       trackObject.timeEnd += Number(duration);
       timeSegment.setAttribute(
         'time-start',
@@ -418,9 +419,10 @@ export class TrackEditor extends LitElement {
 
     const trackElement = {
       start: DOMtimeSegment.getAttribute('start'),
-      end:
+      end: (
         Number(DOMtimeSegment.getAttribute('start')) +
-        Number(DOMtimeSegment.getAttribute('duration')),
+        Number(DOMtimeSegment.getAttribute('duration'))
+      ).toFixed(2),
       duration: DOMtimeSegment.getAttribute('duration'),
       localRef: DOMtimeSegment.getAttribute('localRef'),
       trackRef: DOMtimeSegment.getAttribute('trackRef'),
@@ -551,7 +553,7 @@ export class TrackEditor extends LitElement {
 
   orderElementsByEndDate() {
     const orderedByEndDate = this.segmentsOnTracks.sort(
-      (prev, next) => next.start + next.duration - (prev.start + prev.duration)
+      (prev, next) => prev.end - next.end
     );
     return orderedByEndDate;
   }
@@ -682,6 +684,9 @@ export class TrackEditor extends LitElement {
           500
         );
 
+        let datax = timeSegment.getAttribute('datax');
+        let dataxScaled = datax * (this.zoomFactor / 100);
+
         if (resizeLeft) {
           width = original_width - (ev.pageX - original_mouse_pos);
         } else if (resizeRight) {
@@ -720,7 +725,9 @@ export class TrackEditor extends LitElement {
             timeSegment.style.width = width + 'px';
             timeSegment.setAttribute(
               'time-end',
-              this.formatTimeFromHoundreths(scale(Number(width)))
+              this.formatTimeFromHoundreths(
+                scale(Number(width) + Number(dataxScaled))
+              )
             );
 
             let noDecimalsScaledWidth = scale(Number(width));
@@ -820,7 +827,6 @@ export class TrackEditor extends LitElement {
     const timeEndInHoundreds =
       //(Number(datax) * this.zoomFactor) / 100 + Number(duration);
       Number(datax) + Number(duration);
-
     const timeEnd = this.formatTimeFromHoundreths(
       Number(datax) + Number(duration)
     );
@@ -838,10 +844,11 @@ export class TrackEditor extends LitElement {
 
     if (timeStart < trackStart)
       this.trackElements[trackId].timeStart = timeStart;
-    if (timeEndInHoundreds > trackEnd)
+    if (timeEndInHoundreds > trackEnd || timeEndInHoundreds < trackEnd) {
       this.trackElements[trackId].timeEnd = timeEndInHoundreds;
-
-    elementsList[currentSegmentIndex] = {
+    }
+    // FIXME: check if the object assignment below is needed
+    elementsList[currentSegmentIndex] = { 
       ...elementsList[currentSegmentIndex],
       timeStart: timeStart,
       timeEnd: timeEnd,
@@ -861,12 +868,18 @@ export class TrackEditor extends LitElement {
     const activeClass = 'context-menu--active';
     this.toggleMenuOnff(activeClass);
 
-    const elementsList = this.trackElements[trackRef].elements;
+    const elementsList = this.trackElements[trackRef].elements; // FIXME seems it does not work properly
 
     const isEqualToLocalReference = segment => segment.localRef === localRef;
 
     const currentSegmentIndex = elementsList.findIndex(isEqualToLocalReference);
     elementsList.splice(currentSegmentIndex, 1);
+
+    const segmentIndexForPreview = this.segmentsOnTracks.findIndex(
+      isEqualToLocalReference
+    );
+    this.segmentsOnTracks.splice(segmentIndexForPreview, 1);
+    this.hasTrackStateChanged = true;
   }
 
   toggleMenuOnff = activeClass => {
@@ -916,28 +929,6 @@ export class TrackEditor extends LitElement {
     } else {
       this.toggleMenuOnff(activeClass);
     }
-  }
-
-  // FIXME: for separate component test purposes only
-  _dragStartItemHandler(ev) {
-    this.dragEnd = false;
-    const thumnbailElement = ev.target;
-    thumnbailElement.classList.add('dragging');
-    this.draggedElementType = thumnbailElement.dataset.type;
-
-    const itemData = {
-      type: thumnbailElement.dataset.type,
-      segmentname: thumnbailElement.dataset.segmentname,
-      clipstart: thumnbailElement.dataset.clipstart,
-      clipend: thumnbailElement.dataset.clipend,
-      duration: thumnbailElement.dataset.duration,
-      reference: thumnbailElement.dataset.reference,
-    };
-
-    ev.dataTransfer.effectAllowed = 'copy';
-
-    ev.dataTransfer.setData('text/plain', JSON.stringify(itemData));
-    ev.dataTransfer.setData('text/uri-list', thumnbailElement.src);
   }
 
   render() {
@@ -1038,70 +1029,6 @@ export class TrackEditor extends LitElement {
           <li class="context-option--delete">Delete</li>
         </ul>
       </nav>
-
-      <div style="margin-top: 50px; display:flex; flex-direction: row;">
-        <div>
-          <img
-            class="draggable-media"
-            src="https://picsum.photos/id/999/150/200"
-            draggable="true"
-            alt="example img"
-            @dragstart=${this._dragStartItemHandler}
-            data-segmentname="filmname"
-            data-reference="999"
-            data-type="${MEDIA_TYPES.IMAGE}"
-            data-duration="500"
-            tabindex="0"
-          />
-        </div>
-
-        <div>
-          <img
-            class="draggable-media"
-            src="https://picsum.photos/id/555/150/200"
-            draggable="true"
-            alt="example img"
-            @dragstart=${this._dragStartItemHandler}
-            data-segmentname="filmname"
-            data-reference="555"
-            data-type="${MEDIA_TYPES.IMAGE}"
-            data-clipstart="00.01"
-            data-clipend="00.50"
-            data-duration="1000"
-          />
-        </div>
-
-        <div>
-          <img
-            class="draggable-media"
-            src="https://picsum.photos/id/444/150/200"
-            draggable="true"
-            alt="example img"
-            @dragstart=${this._dragStartItemHandler}
-            data-segmentname="filmname"
-            data-reference="444"
-            data-type="${MEDIA_TYPES.SOUND}"
-            data-clipstart="00.01"
-            data-clipend="00.50"
-            data-duration="1500"
-          />
-        </div>
-        <div>
-          <img
-            class="draggable-media"
-            src="https://picsum.photos/id/445/150/200"
-            draggable="true"
-            alt="example video"
-            @dragstart=${this._dragStartItemHandler}
-            data-segmentname="filmname"
-            data-reference="444"
-            data-type="${MEDIA_TYPES.VIDEO}"
-            data-clipstart="00.01"
-            data-clipend="00.50"
-            data-duration="1500"
-          />
-        </div>
-      </div>
     `;
   }
 }
