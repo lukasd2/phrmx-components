@@ -217,11 +217,27 @@ export class ResultMedia extends LitElement {
         label="Metadati sulla fonte di provenienza"
         class="dialog-overview"
       >
-        <p><em>Titolo del film:</em> ${this.metadataResponse.phx_title}</p>
-        <p><em>Identificativo:</em> ${this.metadataResponse.id}</p>
-        <p><em>Prodotto in:</em> ${this.metadataResponse.phx_country}</p>
-        <p><em>Diretto da:</em> ${this.metadataResponse.phx_director}</p>
-        <p><em>Anno di produzione:</em> ${this.metadataResponse.phx_year}</p>
+        <p><div class="metadata-field">Titolo del film:</div> ${
+          this.metadataResponse.phx_title
+        }</p>
+        <p><div class="metadata-field">Identificativo:</div> ${
+          this.metadataResponse.id
+        }</p>
+        <p><div class="metadata-field">Prodotto in:</div> ${
+          this.metadataResponse.phx_country
+        }</p>
+        <p><div class="metadata-field">Diretto da:</div> ${
+          this.metadataResponse.phx_director
+        }</p>
+        <p><div class="metadata-field">Anno di produzione:</div> ${
+          this.metadataResponse.phx_year
+        }</p>
+        <p>
+        <div class="metadata-field">Fonte e collocazione:</div> ${
+            this.metadataResponse['Archivio di conservazione']
+          }.
+          ${this.metadataResponse['Note copia']}
+        </p>
 
         <sl-button slot="footer" type="primary">Close</sl-button>
       </sl-dialog>`;
