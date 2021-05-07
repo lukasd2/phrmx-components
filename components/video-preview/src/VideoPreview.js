@@ -29,6 +29,8 @@ export class VideoPreview extends LitElement {
     this.playedElement = 0;
     this.displayMediaPreview = false;
     this.playback = '';
+    this.stopPlayer = false;
+    this.singlePreviewVideoRef = '';
   }
 
   connectedCallback() {
@@ -41,9 +43,10 @@ export class VideoPreview extends LitElement {
   }
 
   updated(changedProperties) {
+    // console.debug('[VIDEO PREVIEW] changed properties: ', changedProperties); // logs previous values
+
     if (changedProperties.has('resources')) {
-      // TODO: this might be a good place to finish loading resources before playing
-      this.displayMediaPreview = false;
+      // Template engine may change the order of HTML videos elements we want to pause and hide canvas when new resources arrive
       this.updateTemplateRefs();
     }
     if (changedProperties.has('stopPlayer')) {
@@ -65,7 +68,14 @@ export class VideoPreview extends LitElement {
     }
 
     if (changedProperties.has('singleMediaPreview')) {
-      this._updateBoardPreview();
+      this.displayMediaPreview = true;
+      this.singlePreviewVideoRef = this.shadowRoot.querySelector(
+        '.single-preview-video'
+      );
+      if (this.singlePreviewVideoRef !== '') {
+        this.singlePreviewVideoRef.load();
+        this.singlePreviewVideoRef.play();
+      }
     }
   }
   updateTemplateRefs() {
@@ -79,7 +89,7 @@ export class VideoPreview extends LitElement {
     });
   }
   _startPreview() {
-    console.warn('startPreview content', this.executeSegmentsPreview);
+    this.displayMediaPreview = false;
     if (this.executeSegmentsPreview.length === 1) {
       const playElements = this.playback.querySelector(
         `.${this.executeSegmentsPreview[0].localRef}`
@@ -93,7 +103,7 @@ export class VideoPreview extends LitElement {
           existingSource.classList.add('currently-on-air');
 
           existingSource.load();
-
+          existingSource.muted = 'muted';
           existingSource.play();
         }
         if (playElements.classList.contains('music-player-container')) {
@@ -120,7 +130,8 @@ export class VideoPreview extends LitElement {
             '.video-player-content'
           );
           existingSource.classList.add('currently-on-air');
-
+          existingSource.load();
+          existingSource.muted = 'muted';
           existingSource.play();
         }
         if (playElements.classList.contains('music-player-container')) {
@@ -141,11 +152,11 @@ export class VideoPreview extends LitElement {
   }
 
   _endPreview() {
-    console.warn('_endPreview content', this.terminateSegmentsPreview);
-
     const stopElements = this.playback.querySelector(
       `.${this.terminateSegmentsPreview[0].localRef}`
     );
+
+    console.warn('this is end element', stopElements);
 
     if (stopElements.classList.contains('video-player-container')) {
       const existingSource = stopElements.querySelector(
@@ -172,28 +183,22 @@ export class VideoPreview extends LitElement {
     const currentlyOnAir = this.shadowRoot.querySelectorAll(
       '.currently-on-air'
     );
-    Array.from(currentlyOnAir).forEach(element => {
-      element.pause();
-    });
+    if (currentlyOnAir.length > 0) {
+      Array.from(currentlyOnAir).forEach(element => {
+        element.pause();
+      });
+    }
   }
+
   resumeCurrentlyPlayedMedia() {
+    this.displayMediaPreview = false;
+
     const currentlyOnAir = this.shadowRoot.querySelectorAll(
       '.currently-on-air'
     );
     Array.from(currentlyOnAir).forEach(element => {
       element.play();
     });
-  }
-
-  _updateBoardPreview() {
-    if (
-      !this.singleMediaPreview ||
-      Object.keys(this.singleMediaPreview).length === 0
-    ) {
-      this.displayMediaPreview = false;
-    } else {
-      this.displayMediaPreview = true;
-    }
   }
 
   composeLoadingTemplate() {
@@ -215,9 +220,6 @@ export class VideoPreview extends LitElement {
         this.singleMediaPreview.download_url
       )}`;
     }
-    // solution to a common issue with HTML video player, that allows for dynamically replace source of currently playing video
-    // TODO: same solution for music-player
-    this.stopCurrentPlayerAndLoadNewSource();
 
     if (this.singleMediaPreview.type === 'video') {
       return html` ${this.composeSingleVideoLayer(
@@ -230,25 +232,6 @@ export class VideoPreview extends LitElement {
         this.singleMediaPreview.url,
         this.singleMediaPreview.id
       )}`;
-    }
-  }
-
-  stopCurrentPlayerAndLoadNewSource() {
-    let existingPlayer;
-    let existingSource;
-
-    if (this.shadowRoot.querySelector('.video-player-content')) {
-      existingPlayer = this.shadowRoot.querySelector('.video-player-content');
-      existingSource = this.shadowRoot.querySelector('.video-player__source');
-    } else if (this.shadowRoot.querySelector('.music-player-content')) {
-      existingPlayer = this.shadowRoot.querySelector('.music-player-content');
-      existingSource = this.shadowRoot.querySelector('.music-player__source');
-    }
-    if (existingPlayer) {
-      existingPlayer.pause();
-      existingSource.src = this.singleMediaPreview.url;
-      existingPlayer.load();
-      existingPlayer.play();
     }
   }
 
@@ -269,7 +252,12 @@ export class VideoPreview extends LitElement {
       class="video-player-container ${id}"
       style="visibility: visible; opacity: 1"
     >
-      <video class="video-player-content" preload="auto" autoplay controls>
+      <video
+        class="video-player-content single-preview-video"
+        preload="auto"
+        autoplay
+        controls
+      >
         <source
           id="${id}"
           class="video-player__source"
@@ -363,7 +351,9 @@ export class VideoPreview extends LitElement {
       <header class="preview-header">
         <h3 class="videoEditorTitle">
           <span>"</span>
-          <p contenteditable="true">${this.videoEditorTitle}</p>
+          <p class="video-edit-title" contenteditable="true">
+            ${this.videoEditorTitle}
+          </p>
           <span>"</span>
         </h3>
       </header>
