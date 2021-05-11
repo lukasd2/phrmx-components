@@ -391,7 +391,7 @@ export class TrackEditor extends LitElement {
     rowElement.classList.add('video-row');
 
     if (thumnbailSrc === TRACK_TYPES.SOUND_TRACK) {
-      thumnbailSrc = 'https://img.icons8.com/fluent/48/000000/audio-wave.png';
+      thumnbailSrc = '/assets/custom/audio-wave.png';
       rowElement.style.background = `url(${thumnbailSrc})`;
       rowElement.style.backgroundPosition = `center `;
       rowElement.style.backgroundRepeat = 'repeat-x ';
@@ -848,7 +848,7 @@ export class TrackEditor extends LitElement {
       this.trackElements[trackId].timeEnd = timeEndInHoundreds;
     }
     // FIXME: check if the object assignment below is needed
-    elementsList[currentSegmentIndex] = { 
+    elementsList[currentSegmentIndex] = {
       ...elementsList[currentSegmentIndex],
       timeStart: timeStart,
       timeEnd: timeEnd,

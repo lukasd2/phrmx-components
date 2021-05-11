@@ -78,7 +78,7 @@ export const trackEditorStyles = css`
   .video-track {
     display: flex;
     flex-direction: row;
-    height: 140px;
+    height: 130px;
     background-color: aliceblue;
     align-items: center;
     position: relative;
@@ -87,7 +87,7 @@ export const trackEditorStyles = css`
     display: flex;
     align-items: center;
     flex-direction: row;
-    height: 140px;
+    height: 130px;
     background-color: aliceblue;
     position: relative;
   }
@@ -99,8 +99,8 @@ export const trackEditorStyles = css`
   }
   .hoverWithDrag {
     box-sizing: border-box;
-    border: 4px dotted white;
-    background-color: tomato;
+    border: 4px dotted #ecb483;
+    background-color: #ffdcbd;
   }
   .timeline-element {
     width: 75px;

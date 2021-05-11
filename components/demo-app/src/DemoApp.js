@@ -99,12 +99,10 @@ export class DemoApp extends LitElement {
   }
 
   _handleStartPreview(ev) {
-    console.debug('_handleStartPreview', ev);
     this.playSegments = ev.detail.start.elements;
   }
 
   _handleStopPreview(ev) {
-    console.debug('_handleStopPreview', ev);
     this.endSegments = ev.detail.end.elements;
   }
 

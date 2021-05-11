@@ -12,6 +12,7 @@
     "lint": "eslint --ext .js,.html . --ignore-path .gitignore && prettier \"**/*.js\" --check --ignore-path .gitignore",
     "format": "eslint --ext .js,.html . --fix --ignore-path .gitignore && prettier \"**/*.js\" --write --ignore-path .gitignore",
     "start": "web-dev-server --node-resolve --watch",
+    "build": "rollup -c ../../rollup.config.js",
     "dev": "rollup -c ../../rollup.config.js -w"
   },
   "name": "demo-app",

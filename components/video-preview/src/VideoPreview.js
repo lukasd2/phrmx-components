@@ -24,7 +24,7 @@ export class VideoPreview extends LitElement {
 
   constructor() {
     super();
-    this.videoEditorTitle = 'This is your new video title';
+    this.videoEditorTitle = 'Inserisci il titolo del video';
     this.trackElements = {};
     this.playedElement = 0;
     this.displayMediaPreview = false;
