@@ -5,7 +5,7 @@ import { config } from '../config.js';
 
 import '../../video-preview/index.js';
 
-export class DemoApp extends LitElement {
+export class VideoEditorApp extends LitElement {
   static get properties() {
     return {
       trackElements: { type: Array },

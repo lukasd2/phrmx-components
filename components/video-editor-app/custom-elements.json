@@ -2,7 +2,7 @@
   "version": 2,
   "tags": [
     {
-      "name": "demo-app",
+      "name": "video-editor-app",
       "description": "An application with a title and an action counter",
       "properties": [
         {

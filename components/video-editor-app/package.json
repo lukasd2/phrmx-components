@@ -14,10 +14,10 @@
     "start": "web-dev-server --node-resolve --watch",
     "dev": "rollup -c ../../rollup.config.js -w"
   },
-  "name": "demo-app",
+  "name": "video-editor-app",
   "version": "0.0.0",
   "description": "Webcomponent demo-app following open-wc recommendations",
-  "author": "demo-app",
+  "author": "video-editor-app",
   "license": "MIT",
   "dependencies": {
     "lit-element": "^2.4.0",
