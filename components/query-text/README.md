@@ -93,7 +93,7 @@ this.dictionaries = {
 };
 ```
 
--   List of all QueryText class properties. Refer to Lit Reactive properties for more details about the reactive update cycle [https://lit.dev/docs/components/properties/].
+-   List of all QueryText class properties. Refer to Lit Reactive properties for more details about the reactive update cycle [https://lit.dev/docs/components/properties/]. Also the difference between attributes and properties [https://open-wc.org/guides/knowledge/attributes-and-properties/].
 
 ```javascript
 this.placeholderText = 'Search for anything...'; // Text placeholder to be shown on the search bar

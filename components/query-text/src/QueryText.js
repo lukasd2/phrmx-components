@@ -351,7 +351,6 @@ export class QueryText extends LitElement {
 			);
 			return html`${generatedTemplate}`;
 		}
-		return html;
 	};
 
 	handleClickOnSearchBtn() {
