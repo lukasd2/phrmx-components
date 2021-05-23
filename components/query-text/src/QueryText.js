@@ -32,21 +32,7 @@ export class QueryText extends LitElement {
 		this.textInput = '';
 		this.mintextInputLenght = 2;
 		this.maxAutocompleteSuggestions = 10;
-		this.dictionaries = {
-			'@': [
-				'Valerio Ciriaci',
-				'Alessio Genovese',
-				'Paola Rossi',
-				'Lilly Wachowski',
-			],
-			'title:': [
-				'Mister Wonderland',
-				'L’ultima frontiera',
-				'Storie di Valerio',
-				'Matrix',
-			],
-			'nationality:': ['Russia', 'Indonesia', 'Italia', 'Stati Uniti'],
-		};
+		this.dictionaries = {};
 		this.prefixesToRegexMapping = {};
 		this.autocompleteResults = [];
 		this.fuzzySearchOpts = {
@@ -70,7 +56,7 @@ export class QueryText extends LitElement {
 
 	connectedCallback() {
 		super.connectedCallback();
-		console.debug('DEBUG: QueryText successfuly added to the DOM');
+		// console.debug('DEBUG: QueryText successfuly added to the DOM');
 		this.updateDictionariesInfo();
 	}
 
@@ -81,11 +67,13 @@ export class QueryText extends LitElement {
 	}
 
 	updated(changedProperties) {
-		console.debug('changedProperty', changedProperties); // logs previous values
+		// console.debug('changedProperty', changedProperties); // logs all previous values (useful for component debug)
 		if (changedProperties.has('dictionaries')) {
 			this.updateDictionariesInfo();
 		}
 	}
+
+	// Extract prefixes from dictionaries and create corresponding regexes. Regexes are used to match with text that is beign typed on the search bar
 
 	updateDictionariesInfo() {
 		if (!this.dictionaries || Object.keys(this.dictionaries).length === 0)
@@ -100,6 +88,7 @@ export class QueryText extends LitElement {
 			...this.prefixToMatchingRegexMapping,
 			...prefixesToRegexMapping,
 		};
+		return this.prefixToMatchingRegexMapping;
 	}
 
 	extractPrefixesFromDictionaries() {
@@ -118,7 +107,7 @@ export class QueryText extends LitElement {
 		extractedPrefixes.map(prefix => {
 			const regex = this.createRegexFromPrefix(prefix);
 			prefixToMatchingRegex[prefix] = {
-				regex: regex,
+				regex,
 			};
 			return prefixToMatchingRegex;
 		});
@@ -126,9 +115,9 @@ export class QueryText extends LitElement {
 	}
 
 	createRegexFromPrefix(prefix) {
-		const minCharsAfterPrefix = this.mintextInputLenght;
-		// Regex that matches any defined prefix with the word (longer than threshold) that it follows until a white space occurs
-		//example: "@\S{2,}" --> @==prefix && 2==this.mintextInputLenght
+		const minCharsAfterPrefix = this.mintextInputLenght; // prefix is excluded from the mintextInputLenght count
+		// Create regex that matches any defined prefix with the word (longer than threshold) that follows until a white space occurs
+		// example: "@\S{2,}" ==> @ is the "@" prefix && 2 is the value of this.mintextInputLenght
 		const regex = new RegExp(`${prefix}\\S{${minCharsAfterPrefix},}`, 'gi');
 
 		return regex;
@@ -136,6 +125,7 @@ export class QueryText extends LitElement {
 
 	/* EVENT HANDLERS */
 
+	// Handles text typing on the search bar. Sends an event upwards if ENTER is pressed. Triggers the search engine and shows autocomplete suggestion if a prefix is typed.
 	_handleTextInputEvent(ev) {
 		const searchInputValue = this.searchInput.value;
 		const textInput = this.trimString(searchInputValue);
@@ -165,9 +155,11 @@ export class QueryText extends LitElement {
 		}
 	}
 
+	// Handles the user click on the suggestion
+
 	_handleAutocompleteList(ev) {
 		if (ev.target.tagName === 'LI') {
-			let prefixAutocompleteText = `${
+			const prefixAutocompleteText = `${
 				this.activePrefix
 			}${ev.target.textContent.trim()}`;
 
@@ -175,7 +167,7 @@ export class QueryText extends LitElement {
 				this.currentMatch,
 				prefixAutocompleteText
 			);
-
+			// adds the resolved prefix with the suggestion to the list if not already present
 			if (
 				this.distinctAutocompletes.indexOf(prefixAutocompleteText) ===
 				-1
@@ -205,9 +197,10 @@ export class QueryText extends LitElement {
 		return false;
 	}
 
+	// constructs the query that has to be searched. It extracts and manages the prefix with its text string, matches it with the respective regex and sends the prefix and text string to the search function.
 	queryConstructor() {
 		if (this.distinctAutocompletes.length > 0) {
-			// exclude previous autocompletions from new proposals
+			// exclude previous autocompletions from new proposals. It allows to exclude already resolved prefixes so they do not appear among the suggestions again.
 			this.textInput = this.findUnresolvedPrefixes();
 		}
 		const activePrefix = this.extractLastPrefixToBeAutocompleted();
@@ -264,10 +257,12 @@ export class QueryText extends LitElement {
 				0,
 				this.maxAutocompleteSuggestions
 			);
-		} else return fullAutocompleteResults;
+		}
+		return fullAutocompleteResults;
 	}
 
 	extractLastPrefixToBeAutocompleted() {
+		// eslint-disable-next-line prefer-destructuring
 		const textInput = this.textInput;
 		const indicesOfLastPrefixes = {};
 
@@ -321,20 +316,28 @@ export class QueryText extends LitElement {
 		const stringMatches = [];
 
 		Object.keys(prefixWithRegex).forEach(prefix => {
-			let match = this.textInput.match(prefixWithRegex[prefix].regex);
+			const match = this.textInput.match(prefixWithRegex[prefix].regex);
 			if (match) {
 				stringMatches.push({
-					prefix: prefix,
-					match: match,
+					prefix,
+					match,
 				});
 			}
 		});
 		return stringMatches;
 	}
 
+	// Uses the Fuse library to perform a search inside a prefixed dictionary of strings
+
 	findResourcesByMatchingSubString(prefix, textInput) {
-		console.debug('DEBUG: findResourcesByMatchingSubString', textInput);
-		console.debug('DEBUG: findResourcesByMatchingSubString', prefix);
+		/* console.debug(
+			'DEBUG: findResourcesByMatchingSubString [string to be searched]:',
+			textInput
+		);
+		console.debug(
+			'DEBUG: findResourcesByMatchingSubString [prefix found]:',
+			prefix
+		); */
 		const fuse = new Fuse(this.dictionaries[prefix], this.fuzzySearchOpts);
 		return fuse.search(textInput);
 	}
@@ -343,16 +346,16 @@ export class QueryText extends LitElement {
 
 	composeSearchResultsTemplate = () => {
 		if (this.autocompleteResults) {
-			const generatedTemplate = this.autocompleteResults.map(result => {
-				return html` <li tabindex="0">${result.item}</li>`;
-			});
+			const generatedTemplate = this.autocompleteResults.map(
+				result => html` <li tabindex="0">${result.item}</li>`
+			);
 			return html`${generatedTemplate}`;
 		}
+		return html;
 	};
 
-	handleClick(ev) {
+	handleClickOnSearchBtn() {
 		if (this.isTextInputLenghtGreaterThanThreshold(this.textInput)) {
-			console.log('click', ev);
 			this.showSearchSuggestions = false;
 			const event = new CustomEvent('search-query-event', {
 				detail: {
@@ -376,7 +379,7 @@ export class QueryText extends LitElement {
 				/>
 				<slot
 					name="search-button-slot"
-					@click="${this.handleClick}"
+					@click="${this.handleClickOnSearchBtn}"
 				></slot>
 			</div>
 			<div class="search-results__container">
