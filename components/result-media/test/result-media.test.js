@@ -1,26 +1,12 @@
 import { html, fixture, expect } from '@open-wc/testing';
 
-import '../result-media.js';
+import '../index.js';
 
 describe('ResultMedia', () => {
-  it('has a default title "Hey there" and counter 5', async () => {
+  it('has a default title ', async () => {
     const el = await fixture(html`<result-media></result-media>`);
 
-    expect(el.title).to.equal('Hey there');
-    expect(el.counter).to.equal(5);
-  });
-
-  it('increases the counter on button click', async () => {
-    const el = await fixture(html`<result-media></result-media>`);
-    el.shadowRoot.querySelector('button').click();
-
-    expect(el.counter).to.equal(6);
-  });
-
-  it('can override the title via attribute', async () => {
-    const el = await fixture(html`<result-media title="attribute title"></result-media>`);
-
-    expect(el.title).to.equal('attribute title');
+    expect(el.headerTitle).to.equal('Library of elements');
   });
 
   it('passes the a11y audit', async () => {

@@ -56,6 +56,7 @@ export const resultMediaStyles = css`
     box-sizing: border-box;
     touch-action: none;
     user-select: none;
+    max-height: 170px;
   }
 
   .thumbnail-element.loading {
@@ -135,17 +136,21 @@ export const resultMediaStyles = css`
   }
 
   .card-content.video sl-badge::part(base) {
-    background-color: violet;
+    background-color: #bd10e0;
   }
 
-  .card-image sl-icon-button::part(base) {
+  .card-content.audio sl-badge::part(base) {
+    background-color: #f5a623;
+  }
+
+  .card-image .play-preview-btn::part(base) {
     color: var(--sl-color-gray-100);
     background: var(--sl-color-primary-700);
   }
 
   .image-thumbnail {
-    width: 8rem;
-    height: 8rem;
+    width: 9rem;
+    height: 7rem;
     max-height: 100%;
     min-width: 100%;
     object-fit: cover;
