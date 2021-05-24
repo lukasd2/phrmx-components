@@ -1,6 +1,6 @@
 # \<result-media> Web Component based on Lit
 
-Reusable Web Component based on LitElement. It renders a set of results onto the interface. The results are displayed as a gallery of thumbnails with the support of Drag and Drop API. A tooltip is displayed to quickly describe the hovered item. Additionaly, metadata or detailed description feature can be enabled. It triggers a modal window with further details. The play action is also implemented, it emits an event containing data that allow to reproduce the selected media in another component.
+Reusable Web Component based on LitElement. It renders a set of results onto the interface. The results are displayed as a gallery of thumbnails with the support of Drag and Drop API. A tooltip is displayed to quickly describe the hovered item. Additionaly, metadata or detailed description feature can be enabled. It triggers a modal window with further details. The play action is also implemented, it emits an event containing data that allow to request the selected media (for example to reproduce it).
 
 This webcomponent follows the [open-wc](https://github.com/open-wc/open-wc) recommendation.
 
@@ -90,9 +90,9 @@ this.answerSet = [
   },
   {
     thumbnail_url: 'https://picsum.photos/id/997/150/200',
-    item_name: 'Example sound item',
+    item_name: 'Example image item',
     reference: 997,
-    media_type: 'sound',
+    media_type: 'image',
   },
 ];
 ```
@@ -157,15 +157,15 @@ this.dispatchEvent(event);
 
 - Emits an event when the users click on the "metadata" button requesting additional info by sending upwards the item reference.
 
-````javascript
+```javascript
 const event = new CustomEvent('result-media-preview', {
-   detail: {
-     singleMediaPreview: mediaPreview,
-   },
-   bubbles: true,
-   composed: true,
- });
- this.dispatchEvent(event);
+  detail: {
+    singleMediaPreview: mediaPreview,
+  },
+  bubbles: true,
+  composed: true,
+});
+this.dispatchEvent(event);
 ```
 
 ## Linting with ESLint, Prettier, and Types
@@ -174,7 +174,7 @@ To scan the project for linting errors, run
 
 ```bash
 npm run lint
-````
+```
 
 You can lint with ESLint and Prettier individually as well
 
@@ -235,11 +235,3 @@ npm run storybook:build
 For most of the tools, the configuration is in the `package.json` to reduce the amount of files in your project.
 
 If you customize the configuration a lot, you can consider moving them to individual files.
-
-## Local Demo with `web-dev-server`
-
-```bash
-npm start
-```
-
-To run a local development server that serves the basic demo located in `demo/index.html`
