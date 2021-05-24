@@ -148,6 +148,11 @@ export const resultMediaStyles = css`
     background: var(--sl-color-primary-700);
   }
 
+  .card-image .metadata-preview-btn::part(base) {
+    color: var(--sl-color-gray-100);
+    background: var(--sl-color-primary-500);
+  }
+
   .image-thumbnail {
     width: 9rem;
     height: 7rem;
@@ -169,5 +174,12 @@ export const resultMediaStyles = css`
 
   .skeleton-shapes .square::part(indicator) {
     --border-radius: 3px;
+  }
+
+  .dialog-overview .metadata-field {
+    border: 1px solid #ddd;
+    padding: 5px;
+    display: inline-flex;
+    font-style: italic;
   }
 `;

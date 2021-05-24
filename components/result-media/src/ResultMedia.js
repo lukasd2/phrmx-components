@@ -11,6 +11,8 @@ export class ResultMedia extends LitElement {
       answerSet: { type: Array },
       isLoading: { type: Boolean },
       headerTitle: { type: String },
+      metadataResponse: { type: Object },
+      hasMetadata: { type: Boolean },
     };
   }
 
@@ -18,6 +20,8 @@ export class ResultMedia extends LitElement {
     super();
     this.headerTitle = 'Library of elements';
     this.answerSet = [];
+    this.metadataResponse = {};
+    this.hasMetadata = false;
   }
 
   /* LIFECYCLE METHODS */
@@ -103,7 +107,28 @@ export class ResultMedia extends LitElement {
         composed: true,
       });
       this.dispatchEvent(event);
+    } else if (ev.target.classList.contains('metadata-preview-btn')) {
+      const parentRef = ev.target.getAttribute('parent-ref');
+      const dialog = this.shadowRoot.querySelector('.dialog-overview');
+      dialog.show();
+      this._emitMetadataRequest(parentRef);
+      const closeButton = dialog.querySelector('sl-button[slot="footer"]');
+      closeButton.addEventListener('click', () => {
+        dialog.hide();
+        this.metadataResponse = [];
+      });
     }
+  }
+
+  _emitMetadataRequest(parentRef) {
+    const event = new CustomEvent('metadata-request', {
+      detail: {
+        metadataRequest: parentRef,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   /* HTML/lit-html TEMPLATES */
@@ -119,49 +144,105 @@ export class ResultMedia extends LitElement {
     return html`${generatedTemplate}`;
   };
 
+  composeVideoLayer(answer) {
+    return html`
+      <li
+        @click=${this._emitPreviewData}
+        class="thumbnail-element"
+        draggable="true"
+        data-segmentname="${answer.item_name}"
+        data-type="${answer.media_type}"
+        data-reference="${answer.reference}"
+        data-duration=${answer.duration ? answer.duration * 100 : '500'}
+      >
+        <sl-tooltip>
+          <div slot="content">
+            Titolo: <strong>${answer.item_name}</strong><br />
+            Tipo: <em>${answer.media_type}</em> <br />
+            Durata: <em>${answer.duration}</em> secondi
+          </div>
+          <sl-card class="card-image">
+            <img
+              class="image-thumbnail"
+              slot="image"
+              draggable="false"
+              src=${answer.thumbnail_url}
+              alt="Qui una descrizione a parole della immagine scaricata"
+            />
+            <div class="card-content ${answer.media_type}">
+              <sl-badge>${answer.media_type}</sl-badge>
+              ${this.hasMetadata
+                ? html` <sl-icon-button
+                    class="metadata-preview-btn"
+                    parent-ref=${answer.film_id}
+                    name="info-circle"
+                    label="Dettagli"
+                  ></sl-icon-button>`
+                : ``}
+              <sl-icon-button
+                class="play-preview-btn"
+                name="play-circle"
+                label="Riproduci"
+              ></sl-icon-button>
+            </div>
+          </sl-card>
+        </sl-tooltip>
+      </li>
+    `;
+  }
+
+  composeImageOrSoundLayer(answer) {
+    return html`
+      <li
+        @click=${this._emitPreviewData}
+        class="thumbnail-element"
+        draggable="true"
+        data-segmentname="${answer.item_name}"
+        data-type="${answer.media_type}"
+        data-reference="${answer.reference}"
+      >
+        <sl-tooltip>
+          <div slot="content">
+            Titolo: <strong>${answer.item_name}</strong><br />
+            Tipo: <em>${answer.media_type}</em> <br />
+          </div>
+          <sl-card class="card-image">
+            <img
+              class="image-thumbnail"
+              slot="image"
+              draggable="false"
+              src=${answer.thumbnail_url}
+              alt="Qui una descrizione a parole della immagine scaricata"
+            />
+            <div class="card-content ${answer.media_type}">
+              <sl-badge>${answer.media_type}</sl-badge>
+              <sl-icon-button
+                class="play-preview-btn"
+                name="play-circle"
+                label="Riproduci"
+              ></sl-icon-button>
+            </div>
+          </sl-card>
+        </sl-tooltip>
+      </li>
+    `;
+  }
+
   composeThumbnailsTemplate = () => {
     if (this.answerSet) {
       // console.debug('answerSet', this.answerSet);
-      const generatedTemplate = this.answerSet.map(
-        answer => html`
-          <li
-            @click=${this._emitPreviewData}
-            class="thumbnail-element"
-            draggable="true"
-            data-segmentname="${answer.item_name}"
-            data-type="${answer.media_type}"
-            data-reference="${answer.reference}"
-            data-duration=${answer.duration ? answer.duration * 100 : '500'}
-          >
-            <sl-tooltip>
-              <div slot="content">
-                Titolo: <strong>${answer.item_name}</strong><br />
-                Tipo: <em>${answer.media_type}</em> <br />
-                Durata: <em>${answer.duration}</em> secondi
-              </div>
-              <sl-card class="card-image">
-                <img
-                  class="image-thumbnail"
-                  slot="image"
-                  draggable="false"
-                  src=${answer.thumbnail_url}
-                  alt="Qui una descrizione a parole della immagine scaricata"
-                />
-                <div class="card-content ${answer.media_type}">
-                  <sl-badge>${answer.media_type}</sl-badge>
-                  <sl-icon-button
-                    class="play-preview-btn"
-                    name="play-circle"
-                    label="Riproduci"
-                  ></sl-icon-button>
-                </div>
-              </sl-card>
-            </sl-tooltip>
-          </li>
-        `
-      );
+      const generatedTemplate = this.answerSet.map(answer => {
+        if (answer.media_type === 'video') {
+          return html` ${this.composeVideoLayer(answer)} `;
+        }
+        if (answer.media_type === 'image' || answer.media_type === 'sound') {
+          return html` ${this.composeImageOrSoundLayer(answer)} `;
+        }
+      });
+
       return html`${generatedTemplate}`;
     }
+    return html``;
   };
 
   composeSkeletonThumbnails() {
@@ -178,8 +259,25 @@ export class ResultMedia extends LitElement {
     return html`${templates}`;
   }
 
+  composeMetadataTemplate() {
+    const generatedTemplate = html` <sl-dialog
+    label="Metadata"
+    class="dialog-overview"
+  >
+    <p><div class="metadata-field">Metadata1</div> ${this.metadataResponse.metadata1}</p>
+    <p><div class="metadata-field">Metadata2</div> ${this.metadataResponse.metadata2}</p>
+    <p><div class="metadata-field">Metadata3</div> ${this.metadataResponse.metadata3}</p>
+    <p><div class="metadata-field">Metadata4</div> ${this.metadataResponse.metadata4}</p>
+    <p><div class="metadata-field">Metadata5</div> ${this.metadataResponse.metadata5}</p>
+    <sl-button slot="footer" type="primary">Close</sl-button>
+  </sl-dialog>`;
+
+    return html`${generatedTemplate}`;
+  }
+
   render() {
-    return html` ${this.composeHeaderTemplate(this.headerTitle)}
+    return html`
+      ${this.composeHeaderTemplate(this.headerTitle)}
       <ul
         class="thumbnail-list"
         @dragstart=${this._dragStartItemHandler}
@@ -188,6 +286,8 @@ export class ResultMedia extends LitElement {
         ${this.answerSet ? html` ${this.composeThumbnailsTemplate()} ` : ''}
         ${this.isLoading ? html` ${this.composeSkeletonThumbnails()} ` : ''}
         <slot name="searchInProgress"></slot>
-      </ul>`;
+      </ul>
+      ${this.hasMetadata ? html` ${this.composeMetadataTemplate()} ` : ''}
+    `;
   }
 }
