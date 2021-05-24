@@ -53,10 +53,16 @@ CustomPlaceholder.args = {
 
 export const SlottedContent = Template.bind({});
 SlottedContent.args = {
-	slot: html`<button
+	slot: html`<sl-button
 		slot="search-button-slot"
 		class="search-button"
-	>Search</button>`,
+		type="default"
+		?loading=${this.isLoading}
+		size="large"
+	>
+		<sl-icon slot="suffix" name="search"></sl-icon>
+		Cerca
+	</sl-button>`,
 };
 SlottedContent.argTypes = {
 	slot: { table: { disable: true } },

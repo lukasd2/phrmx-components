@@ -20,7 +20,7 @@ Basic instantiation:
 
 ```html
 <script type="module">
-	import 'query-text/query-text.js';
+	import 'query-text/index.js';
 </script>
 
 <query-text></query-text>
@@ -30,7 +30,7 @@ More complex instantiation (refer to implementation section for the explanation 
 
 ```html
 <script type="module">
-	import 'query-text/query-text.js';
+	import 'query-text/index.js';
 </script>
 
 <query-text
