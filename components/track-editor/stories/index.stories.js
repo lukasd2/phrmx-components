@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import '../track-editor.js';
+import '../index.js';
 
 export default {
   title: 'TrackEditor',
