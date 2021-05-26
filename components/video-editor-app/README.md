@@ -6,12 +6,40 @@ This app is an example that usese all the components in the "phrmx-components" c
 
 ## Quickstart
 
+Follow the installation instructions for installing the entir video-editor-app. Otherwise refer to the docs inside single components repositories.
+
 To get started:
+
+Fast-start, ideal for local development
+Remember to create config.js files!
 
 ```bash
 npm i
-npm dev
+lerna bootstrap
+cd components/video-editor-app
+npm start
 ```
+
+Alternatively, generated a /dist bundle with the of rollup and switch the imports into index.html from CDN to local bundle.
+
+```bash
+npm i
+lerna bootstrap
+npm build
+cd components/video-editor-app
+npm start
+```
+
+Also instead of npm build, the npm dev is indicated for the live reload development (watch mode).
+
+Important for the bundle, include Shoelace dependency into each component (for example QueryText.js, ResultMedia.js etc.) by importing it if the /dist folder does not contain the base.css and shoelace assets.
+
+```javascript
+import '@shoelace-style/shoelace/dist/themes/base.css';
+import '@shoelace-style/shoelace';
+```
+
+Also refer to the Sholace library guides: [https://shoelace.style/getting-started/installation].
 
 A config.js in the main directory is needed in most cases to contain the API-key.
 This has to be created manually.
