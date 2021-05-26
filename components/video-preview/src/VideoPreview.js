@@ -9,8 +9,6 @@ export class VideoPreview extends LitElement {
   static get properties() {
     return {
       videoEditorTitle: { type: String },
-      trackElements: { type: Object },
-      playedElement: { type: Number },
       resources: { type: Array },
       stopPlayer: { type: Boolean },
       resumePlayer: { type: Boolean },
@@ -25,8 +23,6 @@ export class VideoPreview extends LitElement {
   constructor() {
     super();
     this.videoEditorTitle = 'This is your new video title';
-    this.trackElements = {};
-    this.playedElement = 0;
     this.displayMediaPreview = false;
     this.playback = '';
     this.stopPlayer = false;
@@ -35,7 +31,7 @@ export class VideoPreview extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    console.debug('DEBUG: VideoPreview successfuly added to the DOM');
+    // console.debug('DEBUG: VideoPreview successfuly added to the DOM');
   }
 
   firstUpdated() {
@@ -46,6 +42,7 @@ export class VideoPreview extends LitElement {
     // console.debug('[VIDEO PREVIEW] changed properties: ', changedProperties); // logs previous values
 
     if (changedProperties.has('resources')) {
+      this.precache();
       // Template engine may change the order of HTML videos elements we want to pause and hide canvas when new resources arrive
       this.updateTemplateRefs();
     }
@@ -78,6 +75,38 @@ export class VideoPreview extends LitElement {
       }
     }
   }
+
+  // This is an experimental caching method --> look at the cache memory previews start.
+
+  precache() {
+    // Create a video pre-cache and store all first segments of videos inside.
+    window.caches
+      .open('video-pre-cache')
+      .then(cache =>
+        Promise.all(
+          this.resources.map(videoFileUrl =>
+            this.fetchAndCache(videoFileUrl.video_files[0].link, cache)
+          )
+        )
+      );
+  }
+
+  fetchAndCache(videoFileUrl, cache) {
+    // Check first if video is in the cache.
+    return cache.match(videoFileUrl).then(cacheResponse => {
+      // Let's return cached response if video is already in the cache.
+      if (cacheResponse) {
+        return cacheResponse;
+      }
+      // Otherwise, fetch the video from the network.
+      return fetch(videoFileUrl).then(networkResponse => {
+        // Add the response to the cache and return network response in parallel.
+        cache.put(videoFileUrl, networkResponse.clone());
+        return networkResponse;
+      });
+    });
+  }
+
   updateTemplateRefs() {
     const currentlyOnAir = this.shadowRoot.querySelectorAll(
       '.currently-on-air'
@@ -88,13 +117,14 @@ export class VideoPreview extends LitElement {
       element.parentNode.style.opacity = 0;
     });
   }
+
   _startPreview() {
     this.displayMediaPreview = false;
     if (this.executeSegmentsPreview.length === 1) {
       const playElements = this.playback.querySelector(
         `.${this.executeSegmentsPreview[0].localRef}`
       );
-      console.warn('this is play element', playElements);
+      // console.debug('this is the currently played element', playElements);
       if (playElements) {
         if (playElements.classList.contains('video-player-container')) {
           const existingSource = playElements.querySelector(
@@ -156,7 +186,7 @@ export class VideoPreview extends LitElement {
       `.${this.terminateSegmentsPreview[0].localRef}`
     );
 
-    console.warn('this is end element', stopElements);
+    // console.debug('this is currently ended element', stopElements);
 
     if (stopElements.classList.contains('video-player-container')) {
       const existingSource = stopElements.querySelector(
@@ -270,7 +300,7 @@ export class VideoPreview extends LitElement {
 
   composeSingleMusicLayer(url, id) {
     return html` ${this.composeSingleImageLayer(
-        'https://img.icons8.com/fluent/512/000000/audio-wave.png'
+        'https://img.icons8.com/fluent/128/000000/audio-wave.png'
       )}
       <div
         class="music-player-container"

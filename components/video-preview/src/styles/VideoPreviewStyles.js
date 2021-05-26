@@ -22,6 +22,10 @@ export const videoPreviewStyles = css`
     align-items: baseline;
   }
 
+  .video-edit-title {
+    margin: 0px 0px 10px 0px;
+  }
+
   .media-board-wrapper {
     position: relative;
     margin: auto;
