@@ -1,31 +1,17 @@
 import { html, fixture, expect } from '@open-wc/testing';
 
-import '../query-ui.js';
+import '../index.js';
 
 describe('QueryUi', () => {
-  it('has a default title "Hey there" and counter 5', async () => {
-    const el = await fixture(html`<query-ui></query-ui>`);
+	it('has a rootApiEndpoint', async () => {
+		const el = await fixture(html`<query-ui></query-ui>`);
 
-    expect(el.title).to.equal('Hey there');
-    expect(el.counter).to.equal(5);
-  });
+		expect(el.rootApiEndpoint).to.be.a('string');
+	});
 
-  it('increases the counter on button click', async () => {
-    const el = await fixture(html`<query-ui></query-ui>`);
-    el.shadowRoot.querySelector('button').click();
+	it('passes the a11y audit', async () => {
+		const el = await fixture(html`<query-ui></query-ui>`);
 
-    expect(el.counter).to.equal(6);
-  });
-
-  it('can override the title via attribute', async () => {
-    const el = await fixture(html`<query-ui title="attribute title"></query-ui>`);
-
-    expect(el.title).to.equal('attribute title');
-  });
-
-  it('passes the a11y audit', async () => {
-    const el = await fixture(html`<query-ui></query-ui>`);
-
-    await expect(el).shadowDom.to.be.accessible();
-  });
+		await expect(el).shadowDom.to.be.accessible();
+	});
 });

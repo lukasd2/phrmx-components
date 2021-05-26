@@ -10,8 +10,8 @@ export class QueryUi extends LitElement {
 		return css`
 			result-media {
 				box-shadow: var(--sl-shadow-x-large);
-				margin-top: 20px;
-				height: 55vh;
+				margin-top: 10px;
+				height: 50vh;
 				overflow: hidden;
 			}
 		`;
@@ -29,162 +29,35 @@ export class QueryUi extends LitElement {
 
 	constructor() {
 		super();
-		this.rootApiEndpoint = 'https://my.api.mockaroo.com/';
-		this.singleVideoBaseUrl = 'https://api.pexels.com/videos';
-		this.popularVideosBaseUrl = 'https://api.pexels.com/videos/popular';
-		this.dictionariesRoute = `dictionaries.json?${config.apiKey}`; // not hiding keys for demo/testing purposes
-		this.searchRoute = `answerset.json?${config.apiKey}`;
+		this.rootApiEndpoint = '<INSERT_YOUR_ROOT_API_PATH>';
+		this.popularVideosBaseUrl = 'https://api.pexels.com/videos/popular'; // an example from Pexels API (key needed)
+		this.dictionariesRoute = `<INSERT_YOUR_API_PATH_TO_DICTIONARIES>${config.apiKey}`;
+		this.searchRoute = `<INSERT_YOUR_API_PATH_TO_SEARCH>${config.apiKey}`;
 		this.isLoading = false;
-		this.dictionaries = {
-			'@': [
-				'Valerio Ciriaci',
-				'Alessio Genovese',
-				'Paola Rossi',
-				'Lilly Wachowski',
-			],
-			'title:': [
-				'Mister Wonderland',
-				'L’ultima frontiera',
-				'Storie di Valerio',
-				'Matrix',
-			],
-			'nationality:': ['Russia', 'Indonesia', 'Italia', 'Stati Uniti'],
-		};
-		this.searchResults = [
-			{
-				thumbnail_url: 'https://picsum.photos/id/999/150/200',
-				film_name: 'NasceturRidiculus.avi',
-				start: 0.7542,
-				stop: 1.6687,
-				reference: 999,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/998/150/200',
-				film_name: 'LiberoNonMattis.avi',
-				start: 0.515,
-				stop: 1.6765,
-				reference: 998,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/997/150/200',
-				film_name: 'NisiVulputate.mp3',
-				start: 0.581,
-				stop: 1.6561,
-				reference: 997,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/996/150/200',
-				film_name: 'InterdumMaurisUllamcorper.avi',
-				start: 0.0669,
-				stop: 1.2132,
-				reference: 996,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/995/150/200',
-				film_name: 'Nulla.mp3',
-				start: 0.8252,
-				stop: 1.719,
-				reference: 995,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/994/150/200',
-				film_name: 'EstDonecOdio.mp3',
-				start: 0.4759,
-				stop: 1.8958,
-				reference: 994,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/993/150/200',
-				film_name: 'Curabitur.mov',
-				start: 0.5066,
-				stop: 1.4263,
-				reference: 993,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/992/150/200',
-				film_name: 'UltricesErat.avi',
-				start: 0.845,
-				stop: 1.8617,
-				reference: 992,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/991/150/200',
-				film_name: 'PulvinarLobortisEst.mp3',
-				start: 0.5096,
-				stop: 1.6085,
-				reference: 991,
-				media_type: 'image',
-			},
-			{
-				thumbnail_url: 'https://picsum.photos/id/990/150/200',
-				film_name: 'VestibulumAnte.mp3',
-				start: 0.0421,
-				stop: 1.201,
-				reference: 990,
-				media_type: 'image',
-			},
-		];
+		this.dictionaries = {};
+		this.searchResults = [];
 	}
+
+	/* LIFECYCLE METHODS */
 
 	connectedCallback() {
 		super.connectedCallback();
-		console.debug('DEBUG: QueryUi successfuly added to the DOM');
-		//this.getDictionariesRequest(this.dictionariesRoute); // FIXME, Demo purposes an example dictionary is
-		this.singleVideoRequest('856672'); // added sample request for capra resource
-		this.singleVideoRequest('5979048'); // added sample request for florence resource
+		// console.debug('DEBUG: QueryUi successfuly added to the DOM');
+		this.getDictionariesRequest(this.dictionariesRoute);
 		this.popularVidoesRequest(); // FIXME testing, demo purposes. Get the most popular video segmetns from "pexels"
 		this.addEventListener('search-query-event', this._handleSearchedQuery);
 	}
 
-	updated(changedProperties) {
-		console.debug('[QueryUI] changed properties: ', changedProperties); // logs previous values
-	}
+	/* updated(changedProperties) {
+		console.debug('[QueryUI] changed properties: ', changedProperties); // logs previous values Useful for debugging purposes
+	} */
 
-	async singleVideoRequest(id) {
-		const response = await fetch(
-			`${this.singleVideoBaseUrl}/videos/${id}`,
-			{
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: config.PEXELS_API_KEY,
-				},
-			}
+	disconnectedCallback() {
+		this.removeEventListener(
+			'search-query-event',
+			this._handleSearchedQuery
 		);
-		if (!response.ok) {
-			throw new Error(
-				`'Network response: ${response.blob()} from: ${
-					this.singleVideoBaseUrl
-				}`
-			);
-		}
-
-		const jsonResponse = await response.json();
-		console.debug(
-			`DEBUG: Async data from ${this.singleVideoBaseUrl} has arrived:`,
-			jsonResponse
-		);
-		const constructSampleObject = {
-			thumbnail_url: jsonResponse.image,
-			film_name: jsonResponse.url,
-			media_type: 'video',
-			start: 0,
-			stop: 5,
-			duration: jsonResponse.duration,
-			reference: jsonResponse.id,
-		};
-
-		// immutability data pattern used to update LitElement lifecycle (https://open-wc.org/guides/knowledge/lit-element/rendering/#litelements-property-system)
-		this.searchResults = [...this.searchResults, constructSampleObject];
-		return jsonResponse;
+		super.disconnectedCallback();
 	}
 
 	async popularVidoesRequest() {
@@ -192,7 +65,7 @@ export class QueryUi extends LitElement {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: config.PEXELS_API_KEY,
+				Authorization: config.PEXELS_API_KEY, // config.js API KEY needed
 			},
 		});
 		if (!response.ok) {
@@ -204,10 +77,10 @@ export class QueryUi extends LitElement {
 		}
 
 		const jsonResponse = await response.json();
-		console.debug(
+		/* console.debug(
 			`DEBUG: Async data from ${this.popularVideosBaseUrl} has arrived:`,
 			jsonResponse
-		);
+		); */
 		const constructedSampleArray = this.extractAndConstructSampleResultMediaObjs(
 			jsonResponse
 		);
@@ -215,6 +88,8 @@ export class QueryUi extends LitElement {
 		this.searchResults = [...this.searchResults, ...constructedSampleArray];
 		return jsonResponse;
 	}
+
+	// Manual formatting of the incoming results to match our app format
 
 	extractAndConstructSampleResultMediaObjs(jsonResponse) {
 		let arrayOfVideos = [];
@@ -231,14 +106,6 @@ export class QueryUi extends LitElement {
 			});
 		}
 		return arrayOfVideos;
-	}
-
-	disconnectedCallback() {
-		this.removeEventListener(
-			'search-query-event',
-			this._handleSearchedQuery
-		);
-		super.disconnectedCallback();
 	}
 
 	async getDictionariesRequest(route) {
@@ -267,13 +134,17 @@ export class QueryUi extends LitElement {
 	}
 
 	async postSearchRequest(route, data) {
-		const response = await fetch(`${this.rootApiEndpoint}${route}`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(data),
-		});
+		const response = await fetch(
+			`https://api.pexels.com/v1/search?query=nature&per_page=1`,
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: config.PEXELS_API_KEY,
+				},
+				//body: JSON.stringify(data), // depends on the API implementation. It might be a good idea to do a POST with the searched string.
+			}
+		);
 		if (!response.ok) {
 			throw new Error(
 				`'Network response: ${response.blob()} from: ${
@@ -290,12 +161,13 @@ export class QueryUi extends LitElement {
 		return jsonResponse;
 	}
 
+	// It can be more complex with message error types, depending on the adopted error support strategy.
 	changeLoadingState() {
 		this.isLoading = false;
 	}
 
 	_handleSearchedQuery(ev) {
-		console.debug('_handleSearchedQuery', ev.detail.searchedQuery);
+		// console.debug('_handleSearchedQuery', ev.detail.searchedQuery);
 		this.isLoading = true;
 		const result = this.postSearchRequest(
 			this.searchRoute,
