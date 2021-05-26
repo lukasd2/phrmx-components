@@ -1,9 +1,8 @@
 import { LitElement, html, css } from 'lit-element';
 import 'query-ui';
 import 'track-editor';
+import 'video-preview';
 import { config } from '../config.js';
-
-import '../../video-preview/index.js';
 
 export class VideoEditorApp extends LitElement {
   static get properties() {
@@ -42,8 +41,9 @@ export class VideoEditorApp extends LitElement {
 
   constructor() {
     super();
-    this.rootApiEndpoint = 'https://picsum.photos/';
-    this.singleVideoBaseUrl = 'https://api.pexels.com/videos';
+    this.rootApiEndpoint = '<INSERT YOUR ROOT API PATH>';
+    this.singleVideoBaseUrl =
+      '<INSERT YOUR API PATH FOR REQUESTING SINGLE MEDIA>';
     this.getResource = `id`;
     this.trackElements = [];
     this.resources = [];
@@ -64,7 +64,7 @@ export class VideoEditorApp extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    console.debug('DEBUG: DemoApp successfuly added to the DOM');
+    // console.debug('DEBUG: Video-Editor-App successfuly added to the DOM');
 
     this.addEventListener('track-elements', this._handlePlayMedia);
     this.addEventListener('start-preview', this._handleStartPreview);
@@ -83,6 +83,7 @@ export class VideoEditorApp extends LitElement {
       this._makeSequentialRequests();
     }
   }
+
   _handleGlobalResume() {
     this.resumePlayer = true;
     this.stopPlayer = false;
@@ -99,12 +100,12 @@ export class VideoEditorApp extends LitElement {
   }
 
   _handleStartPreview(ev) {
-    console.debug('_handleStartPreview', ev);
+    // console.debug('_handleStartPreview', ev);
     this.playSegments = ev.detail.start.elements;
   }
 
   _handleStopPreview(ev) {
-    console.debug('_handleStopPreview', ev);
+    // console.debug('_handleStopPreview', ev);
     this.endSegments = ev.detail.end.elements;
   }
 
@@ -117,7 +118,6 @@ export class VideoEditorApp extends LitElement {
         ev.detail.singleMediaPreview.id
       );
 
-      this.displayLoadingScreen = false;
       this.displayLoadingScreen = false;
     } else if (
       ev.detail.singleMediaPreview.type === 'video' ||
@@ -172,6 +172,8 @@ export class VideoEditorApp extends LitElement {
       this.singleMediaRequestState
     );
   }
+
+  // Requests all the media sequentially from an API
 
   _makeSequentialRequests = async () => {
     if (!this.trackElements || this.trackElements.length === 0) return null;
