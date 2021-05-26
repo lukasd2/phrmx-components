@@ -111,7 +111,7 @@ this.metadataResponse = {
 };
 ```
 
-- List of all QueryText class properties. Refer to Lit Reactive properties for more details about the reactive update cycle [https://lit.dev/docs/components/properties/]. Also the difference between attributes and properties [https://open-wc.org/guides/knowledge/attributes-and-properties/].
+- List of all ResultMedia class properties. Refer to Lit Reactive properties for more details about the reactive update cycle [https://lit.dev/docs/components/properties/]. Also the difference between attributes and properties [https://open-wc.org/guides/knowledge/attributes-and-properties/].
 
 ```javascript
 this.headerTitle = 'This is your header title'; // Header title
