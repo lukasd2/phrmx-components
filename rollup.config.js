@@ -7,18 +7,14 @@ import { terser } from "rollup-plugin-terser";
 // `npm run build` -> `production` is true
 // `npm run dev` -> `production` is false
 const production = !process.env.ROLLUP_WATCH;
-// const PACKAGE_ROOT_PATH = process.cwd();
-// input: `${PACKAGE_ROOT_PATH}/query-text.js`,
 const PACKAGE_ROOT_PATH = process.cwd();
-const { LERNA_PACKAGE_NAME } = process.env;
+// const { LERNA_PACKAGE_NAME } = process.env;
 
 export default {
-    //input: `components/query-text/query-text.js`,
     input: `${PACKAGE_ROOT_PATH}/index.js`,
     output: {
         dir: path.resolve(`${PACKAGE_ROOT_PATH}`, "dist"),
-        //file: "./dist/index.js",
-        format: "iife", // immediately-invoked function expression — suitable for <script> tags
+        format: "es",
         sourcemap: true,
     },
     plugins: [
@@ -31,12 +27,11 @@ export default {
         copy({
             targets: [
                 {
-                    src: "node_modules/@shoelace-style/shoelace/dist/assets",
-                    dest: "dist/shoelace",
-                },
-                {
-                    src: "assets",
-                    dest: "dist/",
+                    src: path.resolve(
+                        __dirname,
+                        "node_modules/@shoelace-style/shoelace/dist/assets"
+                    ),
+                    dest: path.resolve(__dirname, "dist/shoelace"),
                 },
             ],
             copyOnce: true,
