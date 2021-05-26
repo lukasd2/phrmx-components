@@ -78,7 +78,7 @@ export const trackEditorStyles = css`
   .video-track {
     display: flex;
     flex-direction: row;
-    height: 150px;
+    height: 130px;
     background-color: aliceblue;
     align-items: center;
     position: relative;
@@ -87,7 +87,7 @@ export const trackEditorStyles = css`
     display: flex;
     align-items: center;
     flex-direction: row;
-    height: 150px;
+    height: 130px;
     background-color: aliceblue;
     position: relative;
   }
@@ -99,8 +99,8 @@ export const trackEditorStyles = css`
   }
   .hoverWithDrag {
     box-sizing: border-box;
-    border: 4px dotted white;
-    background-color: tomato;
+    border: 4px dotted #ecb483;
+    background-color: #ffdcbd;
   }
   .timeline-element {
     width: 75px;
@@ -120,7 +120,7 @@ export const trackEditorStyles = css`
   .timeline-container {
     position: relative;
     height: 100%;
-    width: 10000px;
+    width: 15000px;
   }
 
   .timeline-marker {
@@ -154,7 +154,7 @@ export const trackEditorStyles = css`
     left: -20px;
     pointer-events: none;
     background: #292f33;
-    font-size: 11px;
+    font-size: 12px;
     color: #fff;
     padding: 5px;
     width: 50px;
@@ -169,7 +169,7 @@ export const trackEditorStyles = css`
     right: -20px;
     pointer-events: none;
     background: #292f33;
-    font-size: 11px;
+    font-size: 12px;
     color: #fff;
     padding: 5px;
     width: 50px;
@@ -189,7 +189,7 @@ export const trackEditorStyles = css`
   }
 
   .track-element {
-    margin: 20px 0;
+    margin: 10px 0;
   }
 
   .time-segment:hover {
@@ -214,7 +214,7 @@ export const trackEditorStyles = css`
   .resizerLeft {
     position: absolute;
     user-select: none;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.3);
     width: 25px;
     height: 75%;
     top: 0px;
@@ -225,7 +225,7 @@ export const trackEditorStyles = css`
   }
   .resizerRight {
     position: absolute;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.3);
     user-select: none;
     width: 25px;
     height: 75%;

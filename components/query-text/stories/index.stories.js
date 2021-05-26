@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import '../dist/index.js';
+import '../index.js';
 
 export default {
 	title: 'QueryText',
@@ -53,7 +53,16 @@ CustomPlaceholder.args = {
 
 export const SlottedContent = Template.bind({});
 SlottedContent.args = {
-	slot: html`<p>Slotted content</p>`,
+	slot: html`<sl-button
+		slot="search-button-slot"
+		class="search-button"
+		type="default"
+		?loading=${this.isLoading}
+		size="large"
+	>
+		<sl-icon slot="suffix" name="search"></sl-icon>
+		Cerca
+	</sl-button>`,
 };
 SlottedContent.argTypes = {
 	slot: { table: { disable: true } },

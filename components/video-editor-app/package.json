@@ -12,18 +12,20 @@
     "lint": "eslint --ext .js,.html . --ignore-path .gitignore && prettier \"**/*.js\" --check --ignore-path .gitignore",
     "format": "eslint --ext .js,.html . --fix --ignore-path .gitignore && prettier \"**/*.js\" --write --ignore-path .gitignore",
     "start": "web-dev-server --node-resolve --watch",
+    "build": "rollup -c ../../rollup.config.js",
     "dev": "rollup -c ../../rollup.config.js -w"
   },
-  "name": "demo-app",
+  "name": "video-editor-app",
   "version": "0.0.0",
   "description": "Webcomponent demo-app following open-wc recommendations",
-  "author": "demo-app",
+  "author": "video-editor-app",
   "license": "MIT",
   "dependencies": {
     "lit-element": "^2.4.0",
     "lit-html": "^1.3.0",
     "query-ui": "^0.0.0",
-    "track-editor": "^0.0.0"
+    "track-editor": "^0.0.0",
+    "video-preview": "^0.0.0"
   },
   "eslintConfig": {
     "extends": [

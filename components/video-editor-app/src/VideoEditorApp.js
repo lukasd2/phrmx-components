@@ -1,11 +1,10 @@
 import { LitElement, html, css } from 'lit-element';
 import 'query-ui';
 import 'track-editor';
+import 'video-preview';
 import { config } from '../config.js';
 
-import '../../video-preview/index.js';
-
-export class DemoApp extends LitElement {
+export class VideoEditorApp extends LitElement {
   static get properties() {
     return {
       trackElements: { type: Array },
@@ -42,8 +41,9 @@ export class DemoApp extends LitElement {
 
   constructor() {
     super();
-    this.rootApiEndpoint = 'https://picsum.photos/';
-    this.singleVideoBaseUrl = 'https://api.pexels.com/videos';
+    this.rootApiEndpoint = '<INSERT YOUR ROOT API PATH>';
+    this.singleVideoBaseUrl =
+      '<INSERT YOUR API PATH FOR REQUESTING SINGLE MEDIA>';
     this.getResource = `id`;
     this.trackElements = [];
     this.resources = [];
@@ -64,7 +64,7 @@ export class DemoApp extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    console.debug('DEBUG: DemoApp successfuly added to the DOM');
+    // console.debug('DEBUG: Video-Editor-App successfuly added to the DOM');
 
     this.addEventListener('track-elements', this._handlePlayMedia);
     this.addEventListener('start-preview', this._handleStartPreview);
@@ -83,6 +83,7 @@ export class DemoApp extends LitElement {
       this._makeSequentialRequests();
     }
   }
+
   _handleGlobalResume() {
     this.resumePlayer = true;
     this.stopPlayer = false;
@@ -99,12 +100,12 @@ export class DemoApp extends LitElement {
   }
 
   _handleStartPreview(ev) {
-    console.debug('_handleStartPreview', ev);
+    // console.debug('_handleStartPreview', ev);
     this.playSegments = ev.detail.start.elements;
   }
 
   _handleStopPreview(ev) {
-    console.debug('_handleStopPreview', ev);
+    // console.debug('_handleStopPreview', ev);
     this.endSegments = ev.detail.end.elements;
   }
 
@@ -117,7 +118,6 @@ export class DemoApp extends LitElement {
         ev.detail.singleMediaPreview.id
       );
 
-      this.displayLoadingScreen = false;
       this.displayLoadingScreen = false;
     } else if (
       ev.detail.singleMediaPreview.type === 'video' ||
@@ -173,6 +173,8 @@ export class DemoApp extends LitElement {
     );
   }
 
+  // Requests all the media sequentially from an API
+
   _makeSequentialRequests = async () => {
     if (!this.trackElements || this.trackElements.length === 0) return null;
     const elementsArray = this.trackElements;
@@ -206,8 +208,8 @@ export class DemoApp extends LitElement {
       );
       return response;
     } else if (
-      request.mediaType === 'video' &&
-      request.trackRef === 'musicTrack1'
+      (request.mediaType === 'video' && request.trackRef === 'musicTrack1') ||
+      request.mediaType === 'sound'
     ) {
       request.mediaType = 'sound';
       const response = this.singleVideoRequest(request.identificator);

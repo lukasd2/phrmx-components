@@ -9,8 +9,6 @@ export class VideoPreview extends LitElement {
   static get properties() {
     return {
       videoEditorTitle: { type: String },
-      trackElements: { type: Object },
-      playedElement: { type: Number },
       resources: { type: Array },
       stopPlayer: { type: Boolean },
       resumePlayer: { type: Boolean },
@@ -25,15 +23,15 @@ export class VideoPreview extends LitElement {
   constructor() {
     super();
     this.videoEditorTitle = 'This is your new video title';
-    this.trackElements = {};
-    this.playedElement = 0;
     this.displayMediaPreview = false;
     this.playback = '';
+    this.stopPlayer = false;
+    this.singlePreviewVideoRef = '';
   }
 
   connectedCallback() {
     super.connectedCallback();
-    console.debug('DEBUG: VideoPreview successfuly added to the DOM');
+    // console.debug('DEBUG: VideoPreview successfuly added to the DOM');
   }
 
   firstUpdated() {
@@ -41,9 +39,11 @@ export class VideoPreview extends LitElement {
   }
 
   updated(changedProperties) {
+    // console.debug('[VIDEO PREVIEW] changed properties: ', changedProperties); // logs previous values
+
     if (changedProperties.has('resources')) {
-      // TODO: this might be a good place to finish loading resources before playing
-      this.displayMediaPreview = false;
+      this.precache();
+      // Template engine may change the order of HTML videos elements we want to pause and hide canvas when new resources arrive
       this.updateTemplateRefs();
     }
     if (changedProperties.has('stopPlayer')) {
@@ -65,9 +65,48 @@ export class VideoPreview extends LitElement {
     }
 
     if (changedProperties.has('singleMediaPreview')) {
-      this._updateBoardPreview();
+      this.displayMediaPreview = true;
+      this.singlePreviewVideoRef = this.shadowRoot.querySelector(
+        '.single-preview-video'
+      );
+      if (this.singlePreviewVideoRef !== '') {
+        this.singlePreviewVideoRef.load();
+        this.singlePreviewVideoRef.play();
+      }
     }
   }
+
+  // This is an experimental caching method --> look at the cache memory previews start.
+
+  precache() {
+    // Create a video pre-cache and store all first segments of videos inside.
+    window.caches
+      .open('video-pre-cache')
+      .then(cache =>
+        Promise.all(
+          this.resources.map(videoFileUrl =>
+            this.fetchAndCache(videoFileUrl.video_files[0].link, cache)
+          )
+        )
+      );
+  }
+
+  fetchAndCache(videoFileUrl, cache) {
+    // Check first if video is in the cache.
+    return cache.match(videoFileUrl).then(cacheResponse => {
+      // Let's return cached response if video is already in the cache.
+      if (cacheResponse) {
+        return cacheResponse;
+      }
+      // Otherwise, fetch the video from the network.
+      return fetch(videoFileUrl).then(networkResponse => {
+        // Add the response to the cache and return network response in parallel.
+        cache.put(videoFileUrl, networkResponse.clone());
+        return networkResponse;
+      });
+    });
+  }
+
   updateTemplateRefs() {
     const currentlyOnAir = this.shadowRoot.querySelectorAll(
       '.currently-on-air'
@@ -78,13 +117,14 @@ export class VideoPreview extends LitElement {
       element.parentNode.style.opacity = 0;
     });
   }
+
   _startPreview() {
-    console.warn('startPreview content', this.executeSegmentsPreview);
+    this.displayMediaPreview = false;
     if (this.executeSegmentsPreview.length === 1) {
       const playElements = this.playback.querySelector(
         `.${this.executeSegmentsPreview[0].localRef}`
       );
-      console.warn('this is play element', playElements);
+      // console.debug('this is the currently played element', playElements);
       if (playElements) {
         if (playElements.classList.contains('video-player-container')) {
           const existingSource = playElements.querySelector(
@@ -93,7 +133,7 @@ export class VideoPreview extends LitElement {
           existingSource.classList.add('currently-on-air');
 
           existingSource.load();
-
+          existingSource.muted = 'muted';
           existingSource.play();
         }
         if (playElements.classList.contains('music-player-container')) {
@@ -120,7 +160,8 @@ export class VideoPreview extends LitElement {
             '.video-player-content'
           );
           existingSource.classList.add('currently-on-air');
-
+          existingSource.load();
+          existingSource.muted = 'muted';
           existingSource.play();
         }
         if (playElements.classList.contains('music-player-container')) {
@@ -141,11 +182,11 @@ export class VideoPreview extends LitElement {
   }
 
   _endPreview() {
-    console.warn('_endPreview content', this.terminateSegmentsPreview);
-
     const stopElements = this.playback.querySelector(
       `.${this.terminateSegmentsPreview[0].localRef}`
     );
+
+    // console.debug('this is currently ended element', stopElements);
 
     if (stopElements.classList.contains('video-player-container')) {
       const existingSource = stopElements.querySelector(
@@ -172,28 +213,22 @@ export class VideoPreview extends LitElement {
     const currentlyOnAir = this.shadowRoot.querySelectorAll(
       '.currently-on-air'
     );
-    Array.from(currentlyOnAir).forEach(element => {
-      element.pause();
-    });
+    if (currentlyOnAir.length > 0) {
+      Array.from(currentlyOnAir).forEach(element => {
+        element.pause();
+      });
+    }
   }
+
   resumeCurrentlyPlayedMedia() {
+    this.displayMediaPreview = false;
+
     const currentlyOnAir = this.shadowRoot.querySelectorAll(
       '.currently-on-air'
     );
     Array.from(currentlyOnAir).forEach(element => {
       element.play();
     });
-  }
-
-  _updateBoardPreview() {
-    if (
-      !this.singleMediaPreview ||
-      Object.keys(this.singleMediaPreview).length === 0
-    ) {
-      this.displayMediaPreview = false;
-    } else {
-      this.displayMediaPreview = true;
-    }
   }
 
   composeLoadingTemplate() {
@@ -215,9 +250,6 @@ export class VideoPreview extends LitElement {
         this.singleMediaPreview.download_url
       )}`;
     }
-    // solution to a common issue with HTML video player, that allows for dynamically replace source of currently playing video
-    // TODO: same solution for music-player
-    this.stopCurrentPlayerAndLoadNewSource();
 
     if (this.singleMediaPreview.type === 'video') {
       return html` ${this.composeSingleVideoLayer(
@@ -230,25 +262,6 @@ export class VideoPreview extends LitElement {
         this.singleMediaPreview.video_files[0].link,
         this.singleMediaPreview.id
       )}`;
-    }
-  }
-
-  stopCurrentPlayerAndLoadNewSource() {
-    let existingPlayer;
-    let existingSource;
-
-    if (this.shadowRoot.querySelector('.video-player-content')) {
-      existingPlayer = this.shadowRoot.querySelector('.video-player-content');
-      existingSource = this.shadowRoot.querySelector('.video-player__source');
-    } else if (this.shadowRoot.querySelector('.music-player-content')) {
-      existingPlayer = this.shadowRoot.querySelector('.music-player-content');
-      existingSource = this.shadowRoot.querySelector('.music-player__source');
-    }
-    if (existingPlayer) {
-      existingPlayer.pause();
-      existingSource.src = this.singleMediaPreview.video_files[0].link;
-      existingPlayer.load();
-      existingPlayer.play();
     }
   }
 
@@ -269,7 +282,12 @@ export class VideoPreview extends LitElement {
       class="video-player-container ${id}"
       style="visibility: visible; opacity: 1"
     >
-      <video class="video-player-content" preload="auto" autoplay controls>
+      <video
+        class="video-player-content single-preview-video"
+        preload="auto"
+        autoplay
+        controls
+      >
         <source
           id="${id}"
           class="video-player__source"
@@ -282,7 +300,7 @@ export class VideoPreview extends LitElement {
 
   composeSingleMusicLayer(url, id) {
     return html` ${this.composeSingleImageLayer(
-        'https://img.icons8.com/fluent/512/000000/audio-wave.png'
+        'https://img.icons8.com/fluent/128/000000/audio-wave.png'
       )}
       <div
         class="music-player-container"
@@ -367,7 +385,9 @@ export class VideoPreview extends LitElement {
       <header class="preview-header">
         <h3 class="videoEditorTitle">
           <span>"</span>
-          <p contenteditable="true">${this.videoEditorTitle}</p>
+          <p class="video-edit-title" contenteditable="true">
+            ${this.videoEditorTitle}
+          </p>
           <span>"</span>
         </h3>
       </header>

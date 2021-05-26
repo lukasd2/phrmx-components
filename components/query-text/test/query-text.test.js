@@ -1,7 +1,6 @@
-import { html, fixture, should, expect } from '@open-wc/testing';
+import { html, fixture, expect } from '@open-wc/testing';
 
-import '../query-text.js';
-import { QueryText } from '../src/QueryText.js';
+import '../index.js';
 
 describe('QueryText', () => {
 	it('has a default placeholderText "Search for anything...', async () => {
@@ -47,14 +46,6 @@ describe('QueryText', () => {
 
 		expect(el.textInput).to.equal('');
 		expect(autocompleteSuggestions.children).to.have.lengthOf(0);
-	});
-
-	it('extracts array of prefixes from test dictionary', async () => {
-		const newInstance = new QueryText();
-		newInstance.dictionaries = instanceTest.testDictionary;
-
-		const extractPrefixes = newInstance.extractPrefixesFromDictionaries();
-		expect(extractPrefixes).to.be.an('array').that.includes('@', 'title:');
 	});
 
 	it('passes the a11y audit', async () => {

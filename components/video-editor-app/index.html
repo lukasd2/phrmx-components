@@ -1,24 +1,38 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
   <head>
+    <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
+    <meta name="Description" content="Put your description here." />
+    <base href="/" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.40/dist/themes/base.css"
     />
     <!-- <link rel="stylesheet" type="text/css" href="../dist/bundle.css" />  enable this instead of CDN when working with module bundler -->
-    <meta name="Description" content="Put your description here." />
-  </head>
-  <body>
-    <result-media></result-media>
 
-    <script type="module" src="../index.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+      }
+    </style>
+    <title>video-editor-app</title>
+  </head>
+
+  <body>
+    <video-editor-app></video-editor-app>
+
+    <script type="module" src="index.js"></script>
     <script
       type="module"
       src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.40/dist/shoelace.js"
     ></script>
+    <!--  <script type="module" src="./dist/index.js"></script>  enable this instead of CDN when working with module bundler -->
   </body>
 </html>
