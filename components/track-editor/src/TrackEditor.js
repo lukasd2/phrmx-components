@@ -24,7 +24,6 @@ const TRACK_TYPES = {
 export class TrackEditor extends LitElement {
   static get properties() {
     return {
-      dragEnd: { type: Boolean },
       allTracksElements: { type: Array },
       trackElements: { type: Object },
       actualTime: { type: Number },
@@ -35,6 +34,7 @@ export class TrackEditor extends LitElement {
       goForLaunch: { type: Boolean },
       hasTrackStateChanged: { type: Boolean },
       draggedElementType: { type: String },
+      dragEnd: { type: Boolean },
     };
   }
 
@@ -86,14 +86,14 @@ export class TrackEditor extends LitElement {
 
   firstUpdated() {
     this.trackEditor = this.shadowRoot.querySelector('.track-editor');
-    this.createdTracks = this.shadowRoot.querySelectorAll('.track-element');
+    const createdTracks = this.shadowRoot.querySelectorAll('.track-element');
     this.timelineContainer = this.shadowRoot.querySelector(
       '.timeline-container'
     );
     this.contextMenu = this.shadowRoot.querySelector('.context-menu');
     this.marker = this.shadowRoot.getElementById('marker');
 
-    this.createdTracks.forEach(track => {
+    createdTracks.forEach(track => {
       this.trackElements[track.id] = {
         timeStart: 0,
         timeEnd: 0,
@@ -114,21 +114,17 @@ export class TrackEditor extends LitElement {
     }
     if (changedProperties.has('actualTime')) {
       if (this.startingPreviews[0]) {
-        // TODO: branch if multiple elements ends on same time
         if (this.actualTime + 0.1 >= this.startingPreviews[0].start) {
           const startPlayingObjects = this.startingPreviews[0];
           this.startingPreviews.shift(); // reverse startingPreviews array and make it pop() as it is faster
-          // send a poke upwards to do something with a preview media
           this.triggerStartPreview(startPlayingObjects);
         }
       }
 
       if (this.endingPreviews[0]) {
-        // TODO: branch if multiple elements ends on same time
         if (this.actualTime + 0.1 >= this.endingPreviews[0].end) {
           const endPlayingObjects = this.endingPreviews[0];
-          this.endingPreviews.shift(); // reverse and make it pop() as it is faster
-          // send a poke upwards to do something with a preview media
+          this.endingPreviews.shift(); // reverse endingPreviews array and make it pop() as it is faster
           this.triggerEndPreview(endPlayingObjects);
         }
       }
@@ -366,6 +362,9 @@ export class TrackEditor extends LitElement {
     return orderedByEndDate;
   }
 
+  // generates an ordered by starting date array of previews that have to be played in sequence.
+  // generates an ordered by ending date array of previews that have to be ended in sequence.
+
   makePreviewController() {
     this.goForLaunch = false;
     const previews = this.segmentsOnTracks;
@@ -421,8 +420,8 @@ export class TrackEditor extends LitElement {
         positionX = ev.pageX;
         positionY = ev.pageY;
       }
-      this.contextMenu.style.left = positionX + 'px';
-      this.contextMenu.style.top = positionY + 'px';
+      this.contextMenu.style.left = `${positionX}px`;
+      this.contextMenu.style.top = `${positionY}px`;
       const localRef = ev.target.parentNode.getAttribute('localRef');
       const trackRef = ev.target.parentNode.getAttribute('trackRef');
       this.contextMenu.setAttribute('localRef', localRef);
@@ -532,8 +531,8 @@ export class TrackEditor extends LitElement {
 
             const mouseX = ev.pageX;
             const translateXValue = mouseX - startX + track.scrollLeft;
+            // FIXME: hardcoded left margin of 50px.
             if (translateXValue >= 0 && ev.pageX > 50) {
-              // FIXME hardcoded left margin.
               const fn = this.generateScaleFunction(
                 0,
                 this.timeSegmentWidth,
@@ -594,6 +593,7 @@ export class TrackEditor extends LitElement {
       }
 
       const _startMoving = ev => {
+        // FIXME: hardcoded left margin of 50px.
         const startX =
           timeSegment.offsetLeft + 50 + timeSegment.offsetWidth / 2;
 
@@ -646,7 +646,7 @@ export class TrackEditor extends LitElement {
     const trackId = timeSegment.getAttribute('trackRef');
     const elementsList = this.trackElements[trackId].elements;
 
-    const elementsListSimple = this.segmentsOnTracks;
+    const segmentsOnTracks = this.segmentsOnTracks;
 
     const datax = timeSegment.getAttribute('datax');
     const duration = timeSegment.getAttribute('duration');
@@ -655,7 +655,7 @@ export class TrackEditor extends LitElement {
 
     const currentSegmentIndex = elementsList.findIndex(isEqualToLocalReference);
 
-    const result = elementsListSimple.findIndex(isEqualToLocalReference);
+    const result = segmentsOnTracks.findIndex(isEqualToLocalReference);
 
     const timeStart = this.formatTimeFromHoundreths(datax);
     const timeEndInHoundreds = Number(datax) + Number(duration);
@@ -663,8 +663,8 @@ export class TrackEditor extends LitElement {
       Number(datax) + Number(duration)
     );
 
-    elementsListSimple[result] = {
-      ...elementsListSimple[result],
+    segmentsOnTracks[result] = {
+      ...segmentsOnTracks[result],
       start: datax,
       end: timeEndInHoundreds,
       timeStart: timeStart,
@@ -679,7 +679,7 @@ export class TrackEditor extends LitElement {
     if (timeEndInHoundreds > trackEnd || timeEndInHoundreds < trackEnd) {
       this.trackElements[trackId].timeEnd = timeEndInHoundreds;
     }
-    // FIXME: check if the object assignment below is needed
+
     elementsList[currentSegmentIndex] = {
       ...elementsList[currentSegmentIndex],
       timeStart: timeStart,
@@ -692,7 +692,7 @@ export class TrackEditor extends LitElement {
   }
 
   _updateMarkerPosition = ev => {
-    // TODO: hardcoded width of tracks info element on the left side
+    // FIXME: hardcoded left margin of 50px.
     const startX = this.timelineContainer.getBoundingClientRect().left - 50;
     const mouseX = ev.pageX - this.timelineContainer.offsetLeft;
     const traslateValue = mouseX - startX;
