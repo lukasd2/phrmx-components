@@ -31,8 +31,8 @@ export class QueryUi extends LitElement {
 		super();
 		this.rootApiEndpoint = '<INSERT_YOUR_ROOT_API_PATH>';
 		this.popularVideosBaseUrl = 'https://api.pexels.com/videos/popular'; // an example from Pexels API (key needed)
-		this.dictionariesRoute = `<INSERT_YOUR_API_PATH_TO_DICTIONARIES>${config.apiKey}`;
-		this.searchRoute = `<INSERT_YOUR_API_PATH_TO_SEARCH>${config.apiKey}`;
+		this.dictionariesRoute = `<INSERT_YOUR_API_PATH_TO_DICTIONARIES>${config.API_KEY}`;
+		this.searchRoute = `<INSERT_YOUR_API_PATH_TO_SEARCH>${config.API_KEY}`;
 		this.isLoading = false;
 		this.dictionaries = {};
 		this.searchResults = [];

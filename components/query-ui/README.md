@@ -24,7 +24,7 @@ For example it could instaniate the Query-Text and Result-Media components.
 
 ## QuickStart
 
-A config.js in the main directory is needed in most cases to contain
+A config.js in the main directory is needed in most cases to contain the API-key.
 This has to be created manually.
 An example of a config file can be found below:
 
