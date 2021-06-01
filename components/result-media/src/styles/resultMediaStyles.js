@@ -27,6 +27,14 @@ export const resultMediaStyles = css`
     padding: 20px 0 10px 0;
   }
 
+  .media-attribution-header {
+    display: inline-flex;
+    font-size: 14px;
+    width: 100%;
+    justify-content: center;
+    padding-bottom: 10px;
+  }
+
   .thumbnail-list {
     display: flex;
     flex-wrap: wrap;
@@ -139,8 +147,8 @@ export const resultMediaStyles = css`
     background-color: #bd10e0;
   }
 
-  .card-content.audio sl-badge::part(base) {
-    background-color: #f5a623;
+  .card-content.sound sl-badge::part(base) {
+    background-color: #db921c;
   }
 
   .card-image .play-preview-btn::part(base) {
@@ -179,6 +187,7 @@ export const resultMediaStyles = css`
   .dialog-overview .metadata-field {
     border: 1px solid #ddd;
     padding: 5px;
+    margin-right: 6px;
     display: inline-flex;
     font-style: italic;
   }

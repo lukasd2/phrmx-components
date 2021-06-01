@@ -12,6 +12,7 @@ export class QueryUi extends LitElement {
 				box-shadow: var(--sl-shadow-x-large);
 				margin-top: 10px;
 				height: 50vh;
+				min-height: 500px;
 				overflow: hidden;
 			}
 		`;
@@ -23,6 +24,7 @@ export class QueryUi extends LitElement {
 			dictionariesRoute: { type: String },
 			searchResults: { type: Array },
 			dictionaries: { type: Object },
+			metadataResponse: { type: Object },
 			isLoading: { type: Boolean },
 		};
 	}
@@ -35,6 +37,7 @@ export class QueryUi extends LitElement {
 		this.searchRoute = `<INSERT_YOUR_API_PATH_TO_SEARCH>${config.API_KEY}`;
 		this.isLoading = false;
 		this.dictionaries = {};
+		this.metadataResponse = {};
 		this.searchResults = [];
 	}
 
@@ -43,9 +46,11 @@ export class QueryUi extends LitElement {
 	connectedCallback() {
 		super.connectedCallback();
 		// console.debug('DEBUG: QueryUi successfuly added to the DOM');
-		this.getDictionariesRequest(this.dictionariesRoute);
-		this.popularVidoesRequest(); // FIXME testing, demo purposes. Get the most popular video segmetns from "pexels"
+		// this.getDictionariesRequest(this.dictionariesRoute);
+		this.getCollectionsFromPexels();
+		this.localContentRequest();
 		this.addEventListener('search-query-event', this._handleSearchedQuery);
+		this.addEventListener('metadata-request', this._handleMetadataRequest);
 	}
 
 	/* updated(changedProperties) {
@@ -60,14 +65,19 @@ export class QueryUi extends LitElement {
 		super.disconnectedCallback();
 	}
 
-	async popularVidoesRequest() {
-		const response = await fetch(`${this.popularVideosBaseUrl}`, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: config.PEXELS_API_KEY, // config.js API KEY needed
-			},
-		});
+	/* API Calls */
+
+	async getCollectionsFromPexels() {
+		const response = await fetch(
+			`https://api.pexels.com/v1/collections/xdrsont`,
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: config.PEXELS_API_KEY,
+				},
+			}
+		);
 		if (!response.ok) {
 			throw new Error(
 				`'Network response: ${response.blob()} from: ${
@@ -77,11 +87,12 @@ export class QueryUi extends LitElement {
 		}
 
 		const jsonResponse = await response.json();
-		/* console.debug(
-			`DEBUG: Async data from ${this.popularVideosBaseUrl} has arrived:`,
+		console.debug(
+			`DEBUG: Async data from https://api.pexels.com/v1/collections/xdrsont has arrived:`,
 			jsonResponse
-		); */
-		const constructedSampleArray = this.extractAndConstructSampleResultMediaObjs(
+		);
+
+		const constructedSampleArray = this.extractFromCollections(
 			jsonResponse
 		);
 		// immutability data pattern used to update LitElement lifecycle (https://open-wc.org/guides/knowledge/lit-element/rendering/#litelements-property-system)
@@ -89,23 +100,166 @@ export class QueryUi extends LitElement {
 		return jsonResponse;
 	}
 
-	// Manual formatting of the incoming results to match our app format
+	extractFromCollections(jsonResponse) {
+		const media = jsonResponse.media;
+		const arrayOfVideos = [];
+		const arrayOfPhotos = [];
 
-	extractAndConstructSampleResultMediaObjs(jsonResponse) {
-		let arrayOfVideos = [];
-		if (jsonResponse.videos) {
-			const videos = jsonResponse.videos;
-			videos.forEach(element => {
+		media.forEach(element => {
+			if (element.type === 'Video') {
 				arrayOfVideos.push({
 					thumbnail_url: element.image,
-					film_name: element.url,
+					item_name: element.url,
 					media_type: 'video',
 					duration: element.duration,
 					reference: element.id,
 				});
-			});
+			} else if (element.type === 'Photo') {
+				arrayOfPhotos.push({
+					thumbnail_url: element.src.small,
+					item_name: element.url,
+					media_type: 'image',
+					reference: element.id,
+				});
+			}
+		});
+		return [...arrayOfVideos, ...arrayOfPhotos];
+	}
+
+	async localContentRequest() {
+		const response = await fetch(`${config.LOCAL_API_PATH}answerSet`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+		if (!response.ok) {
+			throw new Error(`'Network response: ${response.blob()} `);
 		}
+
+		const jsonResponse = await response.json();
+		/* console.debug(
+			`DEBUG: Async data from ${config.LOCAL_API_PATH} has arrived:`,
+			jsonResponse
+		); */
+
+		const constructedSampleArray = this.extractAndConstructFromLocalData(
+			jsonResponse
+		);
+
+		// immutability data pattern used to update LitElement lifecycle (https://open-wc.org/guides/knowledge/lit-element/rendering/#litelements-property-system)
+		this.searchResults = [...this.searchResults, ...constructedSampleArray];
+		return jsonResponse;
+	}
+
+	extractAndConstructFromLocalData(jsonResponse) {
+		const arrayOfVideos = [];
+		const data = jsonResponse;
+		data.forEach(element => {
+			arrayOfVideos.push({
+				local: true,
+				thumbnail_url: `/assets/thumbnail/${element.id}.jpeg`,
+				item_name: element.film_name,
+				media_type: element.media_type ? element.media_type : 'video',
+				duration: element.duration,
+				reference: element.id,
+			});
+		});
+
 		return arrayOfVideos;
+	}
+
+	async metadataRequest(route, metadataSourceId, type) {
+		const response = await fetch(`${route}${metadataSourceId}`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: config.PEXELS_API_KEY,
+			},
+		});
+		if (!response.ok) {
+			throw new Error(
+				`'Network response: ${response.blob()} from: ${route}${metadataSourceId}`
+			);
+		}
+		const jsonResponse = await response.json();
+		console.debug(
+			`DEBUG: Async data from ${route}${metadataSourceId} has arrived:`,
+			jsonResponse
+		);
+		const constructedSampleArray = this.extractMetadataFromPexels(
+			jsonResponse,
+			type
+		);
+		this.metadataResponse = { ...constructedSampleArray };
+		return jsonResponse;
+	}
+
+	extractMetadataFromPexels(jsonResponse, type) {
+		let response = {};
+		if (type === 'video') {
+			response = {
+				id: jsonResponse.id,
+				userName: jsonResponse.user.name,
+				userProfile: jsonResponse.user.url,
+				height: jsonResponse.height,
+				width: jsonResponse.width,
+				url: jsonResponse.url,
+			};
+		} else if (type === 'image') {
+			response = {
+				id: jsonResponse.id,
+				userName: jsonResponse.photographer,
+				userProfile: jsonResponse.photographer_url,
+				avgColor: jsonResponse.avg_color,
+				height: jsonResponse.height,
+				width: jsonResponse.width,
+				url: jsonResponse.url,
+			};
+		}
+
+		return response;
+	}
+
+	async localMetadataRequest(route, metadataSourceId) {
+		const response = await fetch(
+			`${route}metadataSet/${metadataSourceId}`,
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			}
+		);
+		if (!response.ok) {
+			throw new Error(
+				`'Network response: ${response.blob()} from: ${route}${metadataSourceId}`
+			);
+		}
+		const jsonResponse = await response.json();
+		console.debug(
+			`DEBUG: Async data from ${route}${metadataSourceId} has arrived:`,
+			jsonResponse
+		);
+		const constructedSampleArray = this.extractMetadataFromLocal(
+			jsonResponse
+		);
+		this.metadataResponse = { ...constructedSampleArray };
+		return jsonResponse;
+	}
+
+	extractMetadataFromLocal(jsonResponse) {
+		let response = {};
+		response = {
+			id: jsonResponse.id,
+			description: jsonResponse.description,
+			userName: jsonResponse.userName,
+			userProfile: jsonResponse.userProfile,
+			height: jsonResponse.height,
+			width: jsonResponse.width,
+			url: jsonResponse.url,
+		};
+		return response;
 	}
 
 	async getDictionariesRequest(route) {
@@ -166,6 +320,38 @@ export class QueryUi extends LitElement {
 		this.isLoading = false;
 	}
 
+	async _handleMetadataRequest(ev) {
+		const metadataSourceId = ev.detail.metadataRequest;
+		const isLocal = ev.detail.local;
+		if (ev.detail.mediaType === 'video') {
+			if (isLocal === true) {
+				await this.localMetadataRequest(
+					config.LOCAL_API_PATH,
+					metadataSourceId
+				);
+			} else {
+				await this.metadataRequest(
+					config.SINGLE_VIDEO_ROUTE,
+					metadataSourceId,
+					'video'
+				);
+			}
+		} else if (ev.detail.mediaType === 'image') {
+			if (isLocal === 'true') {
+				await this.localMetadataRequest(
+					config.LOCAL_API_PATH,
+					metadataSourceId
+				);
+			} else {
+				await this.metadataRequest(
+					config.SINGLE_IMAGE_ROUTE,
+					metadataSourceId,
+					'image'
+				);
+			}
+		}
+	}
+
 	_handleSearchedQuery(ev) {
 		// console.debug('_handleSearchedQuery', ev.detail.searchedQuery);
 		this.isLoading = true;
@@ -180,7 +366,7 @@ export class QueryUi extends LitElement {
 		return html`
 			<query-text
 				.dictionaries=${this.dictionaries}
-				placeholderText="Inserisci il testo da cercare..."
+				placeholderText="Search for anything..."
 			>
 				<sl-button
 					slot="search-button-slot"
@@ -190,13 +376,14 @@ export class QueryUi extends LitElement {
 					size="large"
 				>
 					<sl-icon slot="suffix" name="search"></sl-icon>
-					Cerca
+					Search
 				</sl-button>
 			</query-text>
 			<result-media
 				.answerSet=${this.searchResults}
 				?isLoading=${this.isLoading}
-				headerTitle="Esplora i contenuti"
+				headerTitle="Content explorer"
+				.metadataResponse=${this.metadataResponse}
 			>
 				${this.searchInProgress
 					? html`

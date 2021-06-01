@@ -17,6 +17,7 @@ export class VideoPreview extends LitElement {
       singleMediaPreview: { type: Object },
       displayMediaPreview: { type: Boolean },
       displayLoadingScreen: { type: Boolean },
+      mediaAspectRatio: { type: String },
     };
   }
 
@@ -27,6 +28,7 @@ export class VideoPreview extends LitElement {
     this.playback = '';
     this.stopPlayer = false;
     this.singlePreviewVideoRef = '';
+    this.mediaAspectRatio = '16:9';
   }
 
   connectedCallback() {
@@ -42,7 +44,7 @@ export class VideoPreview extends LitElement {
     // console.debug('[VIDEO PREVIEW] changed properties: ', changedProperties); // logs previous values
 
     if (changedProperties.has('resources')) {
-      this.precache();
+      // this.precache();
       // Template engine may change the order of HTML videos elements we want to pause and hide canvas when new resources arrive
       this.updateTemplateRefs();
     }
@@ -80,15 +82,15 @@ export class VideoPreview extends LitElement {
 
   precache() {
     // Create a video pre-cache and store all first segments of videos inside.
-    window.caches
-      .open('video-pre-cache')
-      .then(cache =>
-        Promise.all(
-          this.resources.map(videoFileUrl =>
-            this.fetchAndCache(videoFileUrl.video_files[0].link, cache)
-          )
-        )
-      );
+    window.caches.open('video-pre-cache').then(cache =>
+      Promise.all(
+        this.resources.map(videoFileUrl => {
+          if (videoFileUrl.video_files) {
+            this.fetchAndCache(videoFileUrl.video_files[0].link, cache);
+          }
+        })
+      )
+    );
   }
 
   fetchAndCache(videoFileUrl, cache) {
@@ -124,7 +126,6 @@ export class VideoPreview extends LitElement {
       const playElements = this.playback.querySelector(
         `.${this.executeSegmentsPreview[0].localRef}`
       );
-      // console.debug('this is the currently played element', playElements);
       if (playElements) {
         if (playElements.classList.contains('video-player-container')) {
           const existingSource = playElements.querySelector(
@@ -144,9 +145,7 @@ export class VideoPreview extends LitElement {
 
           existingSource.play();
         }
-        if (playElements.classList.contains('music-player-container')) {
-          return;
-        }
+
       }
       playElements.style.visibility = 'visible';
       playElements.style.opacity = 1;
@@ -172,9 +171,7 @@ export class VideoPreview extends LitElement {
 
           existingSource.play();
         }
-        if (playElements.classList.contains('music-player-container')) {
-          return;
-        }
+
         playElements.style.visibility = 'visible';
         playElements.style.opacity = 1;
       });
@@ -185,8 +182,6 @@ export class VideoPreview extends LitElement {
     const stopElements = this.playback.querySelector(
       `.${this.terminateSegmentsPreview[0].localRef}`
     );
-
-    // console.debug('this is currently ended element', stopElements);
 
     if (stopElements.classList.contains('video-player-container')) {
       const existingSource = stopElements.querySelector(
@@ -246,8 +241,16 @@ export class VideoPreview extends LitElement {
 
   composeSingleMediaPreview() {
     if (this.singleMediaPreview.type === 'image') {
+      if (
+        this.singleMediaPreview.local &&
+        this.singleMediaPreview.local === true
+      ) {
+        return html` ${this.composeSingleImageLayer(
+          this.singleMediaPreview.url
+        )}`;
+      }
       return html` ${this.composeSingleImageLayer(
-        this.singleMediaPreview.download_url
+        this.singleMediaPreview.src.large
       )}`;
     }
 
@@ -258,8 +261,17 @@ export class VideoPreview extends LitElement {
       )}`;
     }
     if (this.singleMediaPreview.type === 'sound') {
+      if (
+        this.singleMediaPreview.local &&
+        this.singleMediaPreview.local === true
+      ) {
+        return html` ${this.composeSingleMusicLayer(
+          this.singleMediaPreview.video_files[0].link,
+          this.singleMediaPreview.id
+        )}`;
+      }
       return html` ${this.composeSingleMusicLayer(
-        this.singleMediaPreview.video_files[0].link,
+        this.singleMediaPreview.url,
         this.singleMediaPreview.id
       )}`;
     }
@@ -270,10 +282,13 @@ export class VideoPreview extends LitElement {
       class="image-player-container"
       style="visibility: visible; opacity: 1"
     >
-      <div
-        class="image-player-content"
-        style="background-image:url(${url}); visibility: visible; opacity: 1"
-      ></div>
+      <sl-responsive-media aspect-ratio=${this.mediaAspectRatio}>
+        <img
+          class="image-player-content"
+          src=${url}
+          style="visibility: visible; opacity: 1"
+        />
+      </sl-responsive-media>
     </div>`;
   }
 
@@ -282,19 +297,20 @@ export class VideoPreview extends LitElement {
       class="video-player-container ${id}"
       style="visibility: visible; opacity: 1"
     >
-      <video
-        class="video-player-content single-preview-video"
-        preload="auto"
-        autoplay
-        controls
-      >
-        <source
-          id="${id}"
-          class="video-player__source"
-          src=${url}
-          type="video/mp4"
-        />
-      </video>
+      <sl-responsive-media aspect-ratio=${this.mediaAspectRatio}>
+        <video
+          class="video-player-content single-preview-video"
+          preload="auto"
+          autoplay
+          controls
+        >
+          <source
+            id="${id}"
+            class="video-player__source"
+            src=${url}
+            type="video/mp4"
+          /></video
+      ></sl-responsive-media>
     </div>`;
   }
 
@@ -319,10 +335,9 @@ export class VideoPreview extends LitElement {
 
   composeImageLayer(url, ref) {
     return html` <div class="image-player-container ${ref}">
-      <div
-        class="image-player-content"
-        style="background-image:url(${url})"
-      ></div>
+      <sl-responsive-media aspect-ratio=${this.mediaAspectRatio}
+        ><img class="image-player-content" src="${url}"
+      /></sl-responsive-media>
     </div>`;
   }
 
@@ -332,14 +347,15 @@ export class VideoPreview extends LitElement {
       class="video-player-container ${ref}"
       style="visibility: hidden; opacity: 0"
     >
-      <video class="video-player-content" preload="auto">
-        <source
-          id="${ref}"
-          class="video-player__source"
-          src=${url}
-          type="video/mp4"
-        />
-      </video>
+      <sl-responsive-media aspect-ratio=${this.mediaAspectRatio}>
+        <video class="video-player-content" preload="auto">
+          <source
+            id="${ref}"
+            class="video-player__source"
+            src=${url}
+            type="video/mp4"
+          /></video
+      ></sl-responsive-media>
     </div>`;
   }
 
@@ -363,9 +379,7 @@ export class VideoPreview extends LitElement {
     if (this.resources.length > 0) {
       const generatedTemplate = this.resources.map(res => {
         if (res.mediaType === 'image') {
-          return html`
-            ${this.composeImageLayer(res.download_url, res.localRef)}
-          `;
+          return html` ${this.composeImageLayer(res.src.large, res.localRef)} `;
         } else if (res.mediaType === 'video') {
           return html`
             ${this.composeVideoLayer(res.video_files[0].link, res.localRef)}
@@ -391,25 +405,27 @@ export class VideoPreview extends LitElement {
           <span>"</span>
         </h3>
       </header>
-      <div class="media-board-wrapper">
-        <div class="media-board-element">
-          <div class="media-board-inner">
-            ${this.displayLoadingScreen
-              ? html`${this.composeLoadingTemplate()} `
-              : ''}
-            <div class="media-board-inner__scale">
-              <div id="playback" class="media-container">
-                ${this.resources
-                  ? html` ${this.composeMediaLayersTemplate()} `
-                  : ''}
-                ${this.displayMediaPreview
-                  ? html` ${this.composeSingleMediaPreview()} `
-                  : ''}
+      <sl-resize-observer>
+        <div class="media-board-wrapper">
+          <div class="media-board-element">
+            <div class="media-board-inner">
+              ${this.displayLoadingScreen
+                ? html`${this.composeLoadingTemplate()} `
+                : ''}
+              <div class="media-board-inner__scale">
+                <div id="playback" class="media-container">
+                  ${this.resources
+                    ? html` ${this.composeMediaLayersTemplate()} `
+                    : ''}
+                  ${this.displayMediaPreview
+                    ? html` ${this.composeSingleMediaPreview()} `
+                    : ''}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </sl-resize-observer>
     `;
   }
 }

@@ -41,9 +41,8 @@ export class VideoEditorApp extends LitElement {
 
   constructor() {
     super();
-    this.rootApiEndpoint = '<INSERT YOUR ROOT API PATH>';
-    this.singleVideoBaseUrl =
-      '<INSERT YOUR API PATH FOR REQUESTING SINGLE MEDIA>';
+    this.rootApiEndpoint = 'https://api.pexels.com/v1/photos';
+    this.singleVideoBaseUrl = 'https://api.pexels.com/videos';
     this.getResource = `id`;
     this.trackElements = [];
     this.resources = [];
@@ -113,11 +112,16 @@ export class VideoEditorApp extends LitElement {
     if (ev.detail.singleMediaPreview.type === 'image') {
       this.displayLoadingScreen = true;
       this.isSingleMediaPreview = true;
-      await this.requestMediaElement(
-        this.getResource,
-        ev.detail.singleMediaPreview.id
-      );
 
+      if (ev.detail.singleMediaPreview.local === 'true') {
+        await this.localResourceRequest(
+          config.LOCAL_API_PATH,
+          'segments/',
+          ev.detail.singleMediaPreview.id
+        );
+      } else {
+        await this.requestMediaElement(ev.detail.singleMediaPreview.id);
+      }
       this.displayLoadingScreen = false;
     } else if (
       ev.detail.singleMediaPreview.type === 'video' ||
@@ -126,7 +130,12 @@ export class VideoEditorApp extends LitElement {
       this.displayLoadingScreen = true;
       this.isSingleMediaPreview = true;
 
-      await this.singleVideoRequest(ev.detail.singleMediaPreview.id);
+      if (ev.detail.singleMediaPreview.local === 'true') {
+        await this.singleLocalVideoRequest(ev.detail.singleMediaPreview.id);
+      } else {
+        await this.singleVideoRequest(ev.detail.singleMediaPreview.id);
+      }
+
       this.isSingleMediaPreview = false;
       this.displayLoadingScreen = false;
     }
@@ -173,6 +182,35 @@ export class VideoEditorApp extends LitElement {
     );
   }
 
+  async singleLocalVideoRequest(id) {
+    const response = await fetch(`http://localhost:3000/segments/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      this.displayLoadingScreen = false;
+      this.updateLoadingSingleMediaState('loadingMedia', false);
+      this.updateLoadingSingleMediaState('errorState', 404);
+      throw new Error(
+        `'Network response: ${response.blob()} from: ${this.singleVideoBaseUrl}`
+      );
+    }
+
+    const jsonResponse = await response.json();
+    console.debug(
+      `DEBUG: Async data from http://localhost:3000/segments/${id} has arrived:`,
+      jsonResponse
+    );
+    if (this.isSingleMediaPreview) {
+      this.singleMediaPreview = jsonResponse;
+      this.singleMediaPreview.type = 'video';
+      this.updateLoadingSingleMediaState('loadingMedia', false);
+    }
+    return jsonResponse;
+  }
+
   // Requests all the media sequentially from an API
 
   _makeSequentialRequests = async () => {
@@ -202,17 +240,28 @@ export class VideoEditorApp extends LitElement {
 
   sequentialRequestMediaByType(request) {
     if (request.mediaType === 'image') {
-      const response = this.requestMediaElement(
-        this.getResource,
-        request.identificator
-      );
+      let response;
+      if (request.local === 'true') {
+        response = this.localResourceRequest(
+          config.LOCAL_API_PATH,
+          'segments/',
+          request.identificator
+        );
+      } else {
+        response = this.requestMediaElement(request.identificator);
+      }
       return response;
     } else if (
       (request.mediaType === 'video' && request.trackRef === 'musicTrack1') ||
       request.mediaType === 'sound'
     ) {
       request.mediaType = 'sound';
-      const response = this.singleVideoRequest(request.identificator);
+      let response;
+      if (request.local === 'true') {
+        response = this.singleLocalVideoRequest(request.identificator);
+      } else {
+        response = this.singleVideoRequest(request.identificator);
+      }
       return response;
     } else if (request.mediaType === 'video') {
       const response = this.singleVideoRequest(request.identificator);
@@ -220,8 +269,41 @@ export class VideoEditorApp extends LitElement {
     }
   }
 
-  async requestMediaElement(route, id) {
-    const response = await fetch(`${this.rootApiEndpoint}${route}/${id}/info`, {
+  async requestMediaElement(id) {
+    const response = await fetch(`${config.SINGLE_IMAGE_ROUTE}/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: config.PEXELS_API_KEY,
+      },
+    });
+    if (!response.ok) {
+      this.displayLoadingScreen = false;
+      this.updateLoadingSingleMediaState('loadingMedia', false);
+      this.updateLoadingSingleMediaState('errorState', 404);
+      throw new Error(
+        `'Network response: ${response.blob()} from: ${
+          config.SINGLE_IMAGE_ROUTE
+        }/${id}`
+      );
+    }
+    const jsonResponse = await response.json();
+    console.debug(
+      `DEBUG: Async data from ${config.SINGLE_IMAGE_ROUTE}/${id} has arrived:`,
+      jsonResponse
+    );
+
+    if (this.isSingleMediaPreview) {
+      this.singleMediaPreview = jsonResponse;
+      this.singleMediaPreview.type = 'image';
+      this.updateLoadingSingleMediaState('loadingMedia', false);
+    }
+
+    return jsonResponse;
+  }
+
+  async localResourceRequest(route, path, id) {
+    const response = await fetch(`${route}${path}${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -232,14 +314,12 @@ export class VideoEditorApp extends LitElement {
       this.updateLoadingSingleMediaState('loadingMedia', false);
       this.updateLoadingSingleMediaState('errorState', 404);
       throw new Error(
-        `'Network response: ${response.blob()} from: ${
-          this.rootApiEndpoint
-        }${route}`
+        `'Network response: ${response.blob()} from: ${route}${path}${id}F`
       );
     }
     const jsonResponse = await response.json();
     console.debug(
-      `DEBUG: Async data from ${this.rootApiEndpoint}${route} has arrived:`,
+      `DEBUG: Async data from ${route}${path}${id} has arrived:`,
       jsonResponse
     );
 

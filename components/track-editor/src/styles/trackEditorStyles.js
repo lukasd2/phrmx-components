@@ -199,16 +199,13 @@ export const trackEditorStyles = css`
   .video-row {
     height: 75%;
     width: 100%;
+    background-size: contain;
     border-radius: 10px;
     position: relative;
   }
 
   .video-row.selected {
     border: 4px solid blue;
-  }
-
-  #zoom {
-    /* direction: rtl; */
   }
 
   .resizerLeft {

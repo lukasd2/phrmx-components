@@ -114,7 +114,7 @@ export class TrackEditor extends LitElement {
     }
     if (changedProperties.has('actualTime')) {
       if (this.startingPreviews[0]) {
-        if (this.actualTime + 0.1 >= this.startingPreviews[0].start) {
+        if (this.actualTime + 60 >= this.startingPreviews[0].start) {
           const startPlayingObjects = this.startingPreviews[0];
           this.startingPreviews.shift(); // reverse startingPreviews array and make it pop() as it is faster
           this.triggerStartPreview(startPlayingObjects);
@@ -122,7 +122,7 @@ export class TrackEditor extends LitElement {
       }
 
       if (this.endingPreviews[0]) {
-        if (this.actualTime + 0.1 >= this.endingPreviews[0].end) {
+        if (this.actualTime >= this.endingPreviews[0].end) {
           const endPlayingObjects = this.endingPreviews[0];
           this.endingPreviews.shift(); // reverse endingPreviews array and make it pop() as it is faster
           this.triggerEndPreview(endPlayingObjects);
@@ -471,12 +471,6 @@ export class TrackEditor extends LitElement {
     this.dispatchStopPreview();
   }
 
-  // By checking on the ev.target a click on the timeline segment can be implemented.
-
-  _handleClickOnTimelineSegment(ev) {
-    // console.debug('_handleClickOnTimelineSegment on time segment', ev);
-  }
-
   _handleTimeSegmentResize = ev => {
     ev.preventDefault();
     const RESIZER_LEFT = 'resizerLeft';
@@ -496,7 +490,7 @@ export class TrackEditor extends LitElement {
       const track = this.trackEditor;
 
       let width;
-      let original_mouse_pos = ev.pageX;
+      const original_mouse_pos = ev.pageX;
       let resizeLeft = false;
       let resizeRight = false;
       if (ev.target.className === RESIZER_LEFT) {
@@ -833,7 +827,7 @@ export class TrackEditor extends LitElement {
     newTimeSegment.appendChild(rowSegment);
 
     if (data.type === MEDIA_TYPES.IMAGE) {
-      newTimeSegment.setAttribute('duration', this.timeSegmentWidth);
+      newTimeSegment.setAttribute('duration', 500);
       const { resizerLeft, resizerRight } = this.createResizersOnSegment();
       newTimeSegment.appendChild(resizerLeft);
       newTimeSegment.appendChild(resizerRight);
@@ -857,6 +851,7 @@ export class TrackEditor extends LitElement {
     } else {
       rowElement.style.background = `url(${thumnbailSrc}) repeat space`;
       rowElement.style.backgroundPosition = `center `;
+      rowElement.style.backgroundSize = `cover`;
       rowElement.style.backgroundRepeat = 'repeat space';
     }
     return rowElement;
@@ -878,13 +873,13 @@ export class TrackEditor extends LitElement {
 
     const trackElement = {
       start: DOMtimeSegment.getAttribute('start'),
-      end: (
+      end:
         Number(DOMtimeSegment.getAttribute('start')) +
-        Number(DOMtimeSegment.getAttribute('duration'))
-      ).toFixed(2),
+        Number(DOMtimeSegment.getAttribute('duration')),
       duration: DOMtimeSegment.getAttribute('duration'),
       localRef: DOMtimeSegment.getAttribute('localRef'),
       trackRef: DOMtimeSegment.getAttribute('trackRef'),
+      local: DOMtimeSegment.getAttribute('local'),
       mediaType: DOMtimeSegment.getAttribute('type'),
       identificator: DOMtimeSegment.getAttribute('reference'),
       timeStart: DOMtimeSegment.getAttribute('time-start'),

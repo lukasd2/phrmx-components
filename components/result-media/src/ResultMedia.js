@@ -21,7 +21,7 @@ export class ResultMedia extends LitElement {
     this.headerTitle = 'Library of elements';
     this.answerSet = [];
     this.metadataResponse = {};
-    this.hasMetadata = false;
+    this.hasMetadata = true;
   }
 
   /* LIFECYCLE METHODS */
@@ -30,10 +30,6 @@ export class ResultMedia extends LitElement {
     super.connectedCallback();
     // console.debug('DEBUG: ResultMedia successfuly added to the DOM');
   }
-
-  /* updated(changedProperties) {
-    console.debug('changedProperty', changedProperties); // logs previous values (useful for component debug)
-  } */
 
   /* EVENT HANDLERS */
 
@@ -45,11 +41,9 @@ export class ResultMedia extends LitElement {
     } else {
       thumbnailElement = ev.target.closest('li');
     }
-
     const thumbnailImage = thumbnailElement.querySelector('.image-thumbnail');
 
     thumbnailElement.classList.add('dragging');
-
     if (thumbnailElement) {
       this._emitDraggedItemType(thumbnailElement.dataset.type);
 
@@ -58,6 +52,7 @@ export class ResultMedia extends LitElement {
         segmentname: thumbnailElement.dataset.segmentname,
         duration: thumbnailElement.dataset.duration,
         reference: thumbnailElement.dataset.reference,
+        local: thumbnailElement.dataset.local,
       };
       ev.dataTransfer.effectAllowed = 'copy';
       ev.dataTransfer.setData('text/plain', JSON.stringify(itemData));
@@ -92,11 +87,13 @@ export class ResultMedia extends LitElement {
       const thumbnailElementId = thumbnailElement.getAttribute(
         'data-reference'
       );
+      const thumbnailOrigin = thumbnailElement.getAttribute('data-local');
       const thumbnailElementType = thumbnailElement.getAttribute('data-type');
 
       const mediaPreview = {
         id: thumbnailElementId,
         type: thumbnailElementType,
+        local: thumbnailOrigin,
       };
 
       const event = new CustomEvent('result-media-preview', {
@@ -109,21 +106,27 @@ export class ResultMedia extends LitElement {
       this.dispatchEvent(event);
     } else if (ev.target.classList.contains('metadata-preview-btn')) {
       const parentRef = ev.target.getAttribute('parent-ref');
+      const mediaType = ev.target.getAttribute('media-type');
+      const thumbnailOrigin = ev.target.getAttribute('is-local');
       const dialog = this.shadowRoot.querySelector('.dialog-overview');
       dialog.show();
-      this._emitMetadataRequest(parentRef);
+
+      this._emitMetadataRequest(parentRef, mediaType, thumbnailOrigin);
+
       const closeButton = dialog.querySelector('sl-button[slot="footer"]');
       closeButton.addEventListener('click', () => {
         dialog.hide();
-        this.metadataResponse = [];
+        this.metadataResponse = {};
       });
     }
   }
 
-  _emitMetadataRequest(parentRef) {
+  _emitMetadataRequest(parentRef, mediaType, local) {
     const event = new CustomEvent('metadata-request', {
       detail: {
         metadataRequest: parentRef,
+        mediaType,
+        local,
       },
       bubbles: true,
       composed: true,
@@ -144,6 +147,19 @@ export class ResultMedia extends LitElement {
     return html`${generatedTemplate}`;
   };
 
+  cleanDescStringFromPexels(string) {
+    if (string && string.length > 0) {
+      let cleanString = string;
+
+      const cleanTmp = cleanString.split('/')[4].replace(/-/g, ' ');
+      const cleanTmp2 = cleanTmp.replace(/[0-9]/g, '').trim();
+
+      cleanString = cleanTmp2;
+      return cleanString;
+    }
+    return '';
+  }
+
   composeVideoLayer(answer) {
     return html`
       <li
@@ -153,13 +169,19 @@ export class ResultMedia extends LitElement {
         data-segmentname="${answer.item_name}"
         data-type="${answer.media_type}"
         data-reference="${answer.reference}"
+        data-local=${answer.local ? true : false}
         data-duration=${answer.duration ? answer.duration * 100 : '500'}
       >
         <sl-tooltip>
           <div slot="content">
-            Titolo: <strong>${answer.item_name}</strong><br />
-            Tipo: <em>${answer.media_type}</em> <br />
-            Durata: <em>${answer.duration}</em> secondi
+            Name:
+            ${answer.local
+              ? html` <strong>${answer.item_name}</strong><br />`
+              : html` <strong
+                    >${this.cleanDescStringFromPexels(answer.item_name)}</strong
+                  ><br />`}
+            Media type: <em>${answer.media_type}</em> <br />
+            Duration: <em>${answer.duration}</em> seconds
           </div>
           <sl-card class="card-image">
             <img
@@ -167,16 +189,71 @@ export class ResultMedia extends LitElement {
               slot="image"
               draggable="false"
               src=${answer.thumbnail_url}
-              alt="Qui una descrizione a parole della immagine scaricata"
+              alt="${answer.item_name}"
             />
             <div class="card-content ${answer.media_type}">
               <sl-badge>${answer.media_type}</sl-badge>
               ${this.hasMetadata
                 ? html` <sl-icon-button
                     class="metadata-preview-btn"
-                    parent-ref=${answer.film_id}
+                    parent-ref=${answer.reference}
+                    media-type=${answer.media_type}
+                    is-local=${answer.local ? true : false}
                     name="info-circle"
-                    label="Dettagli"
+                    label="Details"
+                  ></sl-icon-button>`
+                : ``}
+              <sl-icon-button
+                class="play-preview-btn"
+                name="play-circle"
+                label="Play"
+              ></sl-icon-button>
+            </div>
+          </sl-card>
+        </sl-tooltip>
+      </li>
+    `;
+  }
+
+  composeImageLayer(answer) {
+    return html`
+      <li
+        @click=${this._emitPreviewData}
+        class="thumbnail-element"
+        draggable="true"
+        data-segmentname="${answer.item_name}"
+        data-type="${answer.media_type}"
+        data-reference="${answer.reference}"
+        data-local=${answer.local ? true : false}
+      >
+        <sl-tooltip>
+          <div slot="content">
+            Name:
+            ${answer.local
+              ? html` <strong>${answer.item_name}</strong><br />`
+              : html` <strong
+                    >${this.cleanDescStringFromPexels(answer.item_name)}</strong
+                  ><br />`}
+            Media type: <em>${answer.media_type}</em> <br />
+          </div>
+          <sl-card class="card-image">
+            <img
+              class="image-thumbnail"
+              slot="image"
+              draggable="false"
+              src=${answer.thumbnail_url}
+              alt="${answer.item_name}"
+            />
+            <div class="card-content ${answer.media_type}">
+              <sl-badge>${answer.media_type}</sl-badge>
+              ${this.hasMetadata
+                ? html` <sl-icon-button
+                    class="metadata-preview-btn"
+                    parent-ref=${answer.reference}
+                    media-type=${answer.media_type}
+                    is-local=${answer.local ? true : false}
+                    name="info-circle"
+                    label="Details"
                   ></sl-icon-button>`
                 : ``}
               <sl-icon-button
@@ -191,52 +268,18 @@ export class ResultMedia extends LitElement {
     `;
   }
 
-  composeImageOrSoundLayer(answer) {
-    return html`
-      <li
-        @click=${this._emitPreviewData}
-        class="thumbnail-element"
-        draggable="true"
-        data-segmentname="${answer.item_name}"
-        data-type="${answer.media_type}"
-        data-reference="${answer.reference}"
-      >
-        <sl-tooltip>
-          <div slot="content">
-            Titolo: <strong>${answer.item_name}</strong><br />
-            Tipo: <em>${answer.media_type}</em> <br />
-          </div>
-          <sl-card class="card-image">
-            <img
-              class="image-thumbnail"
-              slot="image"
-              draggable="false"
-              src=${answer.thumbnail_url}
-              alt="Qui una descrizione a parole della immagine scaricata"
-            />
-            <div class="card-content ${answer.media_type}">
-              <sl-badge>${answer.media_type}</sl-badge>
-              <sl-icon-button
-                class="play-preview-btn"
-                name="play-circle"
-                label="Riproduci"
-              ></sl-icon-button>
-            </div>
-          </sl-card>
-        </sl-tooltip>
-      </li>
-    `;
-  }
-
   composeThumbnailsTemplate = () => {
     if (this.answerSet) {
-      // console.debug('answerSet', this.answerSet);
+      console.debug('answerSet', this.answerSet);
       const generatedTemplate = this.answerSet.map(answer => {
         if (answer.media_type === 'video') {
           return html` ${this.composeVideoLayer(answer)} `;
         }
-        if (answer.media_type === 'image' || answer.media_type === 'sound') {
-          return html` ${this.composeImageOrSoundLayer(answer)} `;
+        if (answer.media_type === 'image') {
+          return html` ${this.composeImageLayer(answer)} `;
+        }
+        if (answer.media_type === 'sound') {
+          return html` ${this.composeVideoLayer(answer)} `;
         }
       });
 
@@ -261,14 +304,33 @@ export class ResultMedia extends LitElement {
 
   composeMetadataTemplate() {
     const generatedTemplate = html` <sl-dialog
-    label="Metadata"
+    label="Item details"
     class="dialog-overview"
   >
-    <p><div class="metadata-field">Metadata1</div> ${this.metadataResponse.metadata1}</p>
-    <p><div class="metadata-field">Metadata2</div> ${this.metadataResponse.metadata2}</p>
-    <p><div class="metadata-field">Metadata3</div> ${this.metadataResponse.metadata3}</p>
-    <p><div class="metadata-field">Metadata4</div> ${this.metadataResponse.metadata4}</p>
-    <p><div class="metadata-field">Metadata5</div> ${this.metadataResponse.metadata5}</p>
+    <p><div class="metadata-field">Description</div>${
+      this.metadataResponse.description
+        ? html` ${this.metadataResponse.description}`
+        : html` ${this.cleanDescStringFromPexels(this.metadataResponse.url)}`
+    }
+    <p><div class="metadata-field">Author</div>${
+      this.metadataResponse.userName
+    }</p>
+    <p><div class="metadata-field">Author page</div>
+    <a href=${this.metadataResponse.userProfile} target="_blank">${
+      this.metadataResponse.userProfile
+    }</a></p>
+    <p><div class="metadata-field">Original source</div><a href=${
+      this.metadataResponse.url
+    } target="_blank">${this.metadataResponse.url}</a></p>
+    <p><div class="metadata-field">Media identifier</div> ${
+      this.metadataResponse.id
+    }</p>
+    <p><div class="metadata-field">Native content width</div> ${
+      this.metadataResponse.width
+    }px</p>
+    <p><div class="metadata-field">Native content height</div> ${
+      this.metadataResponse.height
+    }px</p>
     <sl-button slot="footer" type="primary">Close</sl-button>
   </sl-dialog>`;
 
@@ -283,6 +345,12 @@ export class ResultMedia extends LitElement {
         @dragstart=${this._dragStartItemHandler}
         @dragend=${this._onDragEnd}
       >
+        <a
+          class="media-attribution-header"
+          href="https://www.pexels.com"
+          target="_blank"
+          >Photos and videos provided by Pexels</a
+        >
         ${this.answerSet ? html` ${this.composeThumbnailsTemplate()} ` : ''}
         ${this.isLoading ? html` ${this.composeSkeletonThumbnails()} ` : ''}
         <slot name="searchInProgress"></slot>
