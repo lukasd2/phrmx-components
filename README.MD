@@ -1,3 +1,5 @@
+# This branch is not maintaned and should not be build upon. It was configured to manage content from 2 APIs (pexels + local). Branch used for presentation made for dissertation on 05/06/21. 
+
 # Project overview
 
 This repository contains a set of reusable Web Components and an app that uses them. The app is a multimedia editing tool (video-editor).
@@ -6,7 +8,7 @@ The app entry-point is the Video-Editor-App wrapper which contains the following
 
 -   Video-Editor-App [https://github.com/lukasd2/phrmx-components/tree/main/components/video-editor-app]
     -   Video-Preview [https://github.com/lukasd2/phrmx-components/tree/main/components/video-preview]
-    -   Track-Editor [https://github.com/lukasd2/phrmx-components/tree/main/components]
+    -   Track-Editor [https://github.com/lukasd2/phrmx-components/tree/main/components/track-editor]
 -   Query-Ui [https://github.com/lukasd2/phrmx-components/tree/main/components/query-ui]
     -   Query-Text [https://github.com/lukasd2/phrmx-components/tree/main/components/query-text]
     -   Result-Media [https://github.com/lukasd2/phrmx-components/tree/main/components/result-media]

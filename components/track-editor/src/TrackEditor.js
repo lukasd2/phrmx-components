@@ -114,7 +114,7 @@ export class TrackEditor extends LitElement {
     }
     if (changedProperties.has('actualTime')) {
       if (this.startingPreviews[0]) {
-        if (this.actualTime + 60 >= this.startingPreviews[0].start) {
+        if (this.actualTime + 50 >= this.startingPreviews[0].start) {
           const startPlayingObjects = this.startingPreviews[0];
           this.startingPreviews.shift(); // reverse startingPreviews array and make it pop() as it is faster
           this.triggerStartPreview(startPlayingObjects);

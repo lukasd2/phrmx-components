@@ -99,12 +99,12 @@ export class VideoEditorApp extends LitElement {
   }
 
   _handleStartPreview(ev) {
-    // console.debug('_handleStartPreview', ev);
+    //console.debug('_handleStartPreview', ev);
     this.playSegments = ev.detail.start.elements;
   }
 
   _handleStopPreview(ev) {
-    // console.debug('_handleStopPreview', ev);
+    //console.debug('_handleStopPreview', ev);
     this.endSegments = ev.detail.end.elements;
   }
 
@@ -159,10 +159,10 @@ export class VideoEditorApp extends LitElement {
     }
 
     const jsonResponse = await response.json();
-    console.debug(
+    /* console.debug(
       `DEBUG: Async data from ${this.singleVideoBaseUrl} has arrived:`,
       jsonResponse
-    );
+    ); */
     if (this.isSingleMediaPreview) {
       this.singleMediaPreview = jsonResponse;
       this.singleMediaPreview.type = 'video';
@@ -176,10 +176,6 @@ export class VideoEditorApp extends LitElement {
       ...this.singleMediaRequestState,
       [key]: value,
     };
-    console.warn(
-      'DEMO APP: singleMediaRequestState',
-      this.singleMediaRequestState
-    );
   }
 
   async singleLocalVideoRequest(id) {
@@ -199,10 +195,10 @@ export class VideoEditorApp extends LitElement {
     }
 
     const jsonResponse = await response.json();
-    console.debug(
+    /* console.debug(
       `DEBUG: Async data from http://localhost:3000/segments/${id} has arrived:`,
       jsonResponse
-    );
+    ); */
     if (this.isSingleMediaPreview) {
       this.singleMediaPreview = jsonResponse;
       this.singleMediaPreview.type = 'video';
@@ -264,7 +260,12 @@ export class VideoEditorApp extends LitElement {
       }
       return response;
     } else if (request.mediaType === 'video') {
-      const response = this.singleVideoRequest(request.identificator);
+      let response;
+      if (request.local === 'true') {
+        response = this.singleLocalVideoRequest(request.identificator);
+      } else {
+        response = this.singleVideoRequest(request.identificator);
+      }
       return response;
     }
   }
@@ -288,10 +289,10 @@ export class VideoEditorApp extends LitElement {
       );
     }
     const jsonResponse = await response.json();
-    console.debug(
+    /* console.debug(
       `DEBUG: Async data from ${config.SINGLE_IMAGE_ROUTE}/${id} has arrived:`,
       jsonResponse
-    );
+    ); */
 
     if (this.isSingleMediaPreview) {
       this.singleMediaPreview = jsonResponse;
@@ -318,10 +319,10 @@ export class VideoEditorApp extends LitElement {
       );
     }
     const jsonResponse = await response.json();
-    console.debug(
+    /* console.debug(
       `DEBUG: Async data from ${route}${path}${id} has arrived:`,
       jsonResponse
-    );
+    ); */
 
     if (this.isSingleMediaPreview) {
       this.singleMediaPreview = jsonResponse;

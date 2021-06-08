@@ -44,7 +44,6 @@ export class VideoPreview extends LitElement {
     // console.debug('[VIDEO PREVIEW] changed properties: ', changedProperties); // logs previous values
 
     if (changedProperties.has('resources')) {
-      // this.precache();
       // Template engine may change the order of HTML videos elements we want to pause and hide canvas when new resources arrive
       this.updateTemplateRefs();
     }
@@ -76,37 +75,6 @@ export class VideoPreview extends LitElement {
         this.singlePreviewVideoRef.play();
       }
     }
-  }
-
-  // This is an experimental caching method --> look at the cache memory previews start.
-
-  precache() {
-    // Create a video pre-cache and store all first segments of videos inside.
-    window.caches.open('video-pre-cache').then(cache =>
-      Promise.all(
-        this.resources.map(videoFileUrl => {
-          if (videoFileUrl.video_files) {
-            this.fetchAndCache(videoFileUrl.video_files[0].link, cache);
-          }
-        })
-      )
-    );
-  }
-
-  fetchAndCache(videoFileUrl, cache) {
-    // Check first if video is in the cache.
-    return cache.match(videoFileUrl).then(cacheResponse => {
-      // Let's return cached response if video is already in the cache.
-      if (cacheResponse) {
-        return cacheResponse;
-      }
-      // Otherwise, fetch the video from the network.
-      return fetch(videoFileUrl).then(networkResponse => {
-        // Add the response to the cache and return network response in parallel.
-        cache.put(videoFileUrl, networkResponse.clone());
-        return networkResponse;
-      });
-    });
   }
 
   updateTemplateRefs() {
@@ -145,7 +113,6 @@ export class VideoPreview extends LitElement {
 
           existingSource.play();
         }
-
       }
       playElements.style.visibility = 'visible';
       playElements.style.opacity = 1;

@@ -47,8 +47,8 @@ export class QueryUi extends LitElement {
 		super.connectedCallback();
 		// console.debug('DEBUG: QueryUi successfuly added to the DOM');
 		// this.getDictionariesRequest(this.dictionariesRoute);
-		this.getCollectionsFromPexels();
 		this.localContentRequest();
+		this.getCollectionsFromPexels();
 		this.addEventListener('search-query-event', this._handleSearchedQuery);
 		this.addEventListener('metadata-request', this._handleMetadataRequest);
 	}
@@ -69,7 +69,7 @@ export class QueryUi extends LitElement {
 
 	async getCollectionsFromPexels() {
 		const response = await fetch(
-			`https://api.pexels.com/v1/collections/xdrsont`,
+			`https://api.pexels.com/v1/collections/l6ucob1`,
 			{
 				method: 'GET',
 				headers: {
@@ -88,7 +88,7 @@ export class QueryUi extends LitElement {
 
 		const jsonResponse = await response.json();
 		console.debug(
-			`DEBUG: Async data from https://api.pexels.com/v1/collections/xdrsont has arrived:`,
+			`DEBUG: Async data from https://api.pexels.com/v1/collections/l6ucob1 has arrived:`,
 			jsonResponse
 		);
 
@@ -324,7 +324,7 @@ export class QueryUi extends LitElement {
 		const metadataSourceId = ev.detail.metadataRequest;
 		const isLocal = ev.detail.local;
 		if (ev.detail.mediaType === 'video') {
-			if (isLocal === true) {
+			if (isLocal === 'true') {
 				await this.localMetadataRequest(
 					config.LOCAL_API_PATH,
 					metadataSourceId
