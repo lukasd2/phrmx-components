@@ -833,7 +833,7 @@ export class TrackEditor extends LitElement {
     newTimeSegment.appendChild(rowSegment);
 
     if (data.type === MEDIA_TYPES.IMAGE) {
-      newTimeSegment.setAttribute('duration', this.timeSegmentWidth);
+      newTimeSegment.setAttribute('duration', this.timeSegmentWidth); // if segment duration/width is not synchronised with the default segment duration/width try putting 500 here and refactor code implementing a variable: defaultTimeSementWidth. This happens because timeSegmentWidth gets reassigned when scaling in/out.
       const { resizerLeft, resizerRight } = this.createResizersOnSegment();
       newTimeSegment.appendChild(resizerLeft);
       newTimeSegment.appendChild(resizerRight);
