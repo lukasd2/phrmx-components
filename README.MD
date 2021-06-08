@@ -6,7 +6,7 @@ The app entry-point is the Video-Editor-App wrapper which contains the following
 
 -   Video-Editor-App [https://github.com/lukasd2/phrmx-components/tree/main/components/video-editor-app]
     -   Video-Preview [https://github.com/lukasd2/phrmx-components/tree/main/components/video-preview]
-    -   Track-Editor [https://github.com/lukasd2/phrmx-components/tree/main/components]
+    -   Track-Editor [https://github.com/lukasd2/phrmx-components/tree/main/components/track-editor]
 -   Query-Ui [https://github.com/lukasd2/phrmx-components/tree/main/components/query-ui]
     -   Query-Text [https://github.com/lukasd2/phrmx-components/tree/main/components/query-text]
     -   Result-Media [https://github.com/lukasd2/phrmx-components/tree/main/components/result-media]
