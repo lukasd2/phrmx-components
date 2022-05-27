@@ -1,4 +1,4 @@
-import { html, LitElement } from 'lit-element';
+import { html, LitElement } from 'lit';
 import { resultMediaStyles } from './styles/resultMediaStyles.js';
 
 export class ResultMedia extends LitElement {

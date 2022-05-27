@@ -1,10 +1,10 @@
-// import { hmrPlugin, presets } from '@open-wc/dev-server-hmr';
+import { hmrPlugin, presets } from '@open-wc/dev-server-hmr'
 
 /** Use Hot Module replacement by adding --hmr to the start command */
-const hmr = process.argv.includes('--hmr');
+const hmr = process.argv.includes('--hmr')
 
 export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
-  nodeResolve: true,
+  /* nodeResolve: true, */
   open: '/demo/',
   watch: !hmr,
 
@@ -15,14 +15,20 @@ export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
   // appIndex: 'demo/index.html',
 
   /** Confgure bare import resolve plugin */
-  // nodeResolve: {
-  //   exportConditions: ['browser', 'development']
-  // },
+  nodeResolve: {
+    exportConditions: ['browser', 'development']
+  },
 
   plugins: [
     /** Use Hot Module Replacement by uncommenting. Requires @open-wc/dev-server-hmr plugin */
     // hmr && hmrPlugin({ exclude: ['**/*/node_modules/**/*'], presets: [presets.litElement] }),
-  ],
+
+    hmrPlugin({
+      include: ['src/**/*'],
+      // only v3
+      presets: [presets.lit]
+    })
+  ]
 
   // See documentation for all available options
-});
+})
